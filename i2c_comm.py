@@ -16,7 +16,7 @@ class ELB_Linux:
 
     def __checfw_ver(self) -> list:
         # Write Page 3
-        self.bus.write_block_data(self.DEV_ADD, [127, 3])        
+        self.bus.write_byte_data(self.DEV_ADD, 127, 3)        
         # Retrieve data from registers
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 182, 4)
         retdata = [x for x in retdata]
@@ -32,7 +32,7 @@ class ELB_Linux:
 
     def __get_uut_sn(self) -> list:
         # write page 0
-        self.bus.write_block_data(self.DEV_ADD, [127, 0])
+        self.bus.write_byte_data(self.DEV_ADD, 127, 0)  
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 166, 16)
         serial_number = [x for x in retdata] #array that holds the serialnumber
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 148, 16)
@@ -40,6 +40,12 @@ class ELB_Linux:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
         revision = [x for x in retdata] # array that holds the rev number
         return [serial_number, part_number, revision]
+
+    def led_ctrl(self):
+        # write page 3
+        self.bus.write_byte_data(self.DEV_ADD, 127, 3)
+        # flash LEDs
+        self.bus.write_byte_data(self.DEV_ADD, 129, 0x22)        
 
 
     def main(self):
@@ -52,6 +58,8 @@ class ELB_Linux:
         print("Serial Number: {}",serial_number)
         print("Part Number: {}",part_number)
         print("Revision: {}",revision)
+        print("Flash LEDs")
+        self.led_ctrl()
         # bus = SMBus()
 
 
