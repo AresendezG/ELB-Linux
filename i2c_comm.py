@@ -1,6 +1,7 @@
 import asyncio
 import time
-from i2c_types import LedMode, TempSensors, VoltageSensors, VoltReadings
+
+from i2c_types import LedMode, TempSensors, VoltageSensors
 from smbus2 import SMBus
 
 
@@ -76,16 +77,16 @@ class ELB_i2c:
         return val
 
     # ------ Sequences ---------------
-    async def led_sequence(self):
+    def led_sequence(self):
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # flash LEDs
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.BOTH_FLASH)
-        await asyncio.sleep(5)
+        time.sleep(5)
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.GREEN_ON)
-        await asyncio.sleep(5)
+        time.sleep(5)
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.RED_ON)
-        await asyncio.sleep(5)
+        time.sleep(5)
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
 
     def Get_AllVoltages(self) -> list:
@@ -120,7 +121,7 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # ePPS Start capture:
         self.bus.write_i2c_block_data(self.DEV_ADD, 164, [0x01])
-        self.timesleep(5)
+        time.sleep(5)
         retdata=[0]
         while retdata[0] == 0:
             retdata = self.bus.read_i2c_block_data(self.DEV_ADD,156,1)
@@ -134,16 +135,23 @@ class ELB_i2c:
 
     def main(self):
         print("Getting the FWversion:")
-        [dsp_ver, dsp_id, dsp_rev] = self.__checfw_ver()
+        [dsp_ver, dsp_id, dsp_rev, fwver] = self.__checfw_ver()
         print("DSP Version: ",dsp_ver)
         print("DSP ID: ", dsp_id)
         print("Getting UUT's SN: ")
-        [serial_number, part_number, revision, fwver] = self.__get_uut_sn()
+        [serial_number, part_number, revision] = self.__get_uut_sn()
         print("Serial Number: ",serial_number)
         print("Part Number: ",part_number)
         print("Revision: ",revision)
-        print("Firmware version {}.{}".format(fwver[0], fwver[1]))
-        self.Get_AllVoltages()        
+        print("Firmware version: {}.{}".format(fwver[0], fwver[1]))
+        self.Get_AllVoltages()
+        self.Get_AllTemps()
+        print("ePPS Data:")
+        [freq, duty, dutyms] = self.Get_Alll_EPPSData()
+        print("ePPS Frequency: ",freq)
+        print("ePPS Duty %",duty)
+        print("ePPS Duty ms",dutyms)
+        self.Get_Alll_EPPSData()        
         print("LEDs Routine")
         self.led_sequence()
         # bus = SMBus()
