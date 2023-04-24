@@ -31,6 +31,23 @@ class CurrentSensors:
 	VCC_RX	= 176
 	VCC_TX	= 178
 
+
+# Configuration: GPIO regs
+class ELB_GPIOs:
+    # ELB Inputs
+	GPIO_IN_REG		=   141
+	LPMODE_LOW     	=   [0, 0x02]
+	LPMODE_HIGH		=	[1, 0x02]
+	MODSEL_LOW		=	[0, 0x01]
+	MODSEL_HIGH	   	=   [1, 0x01]
+	RESET_L_LOW    	=   [0, 0x04]
+	RESET_L_HIGH	=	[1, 0x04]
+    # ELB Outputs
+	INT_L_LOW       =   [0x00]
+	PRESENT_L_LOW   =   [0x00]
+	INT_L_HIGH		=	[0x01]
+	PRESENT_L_HIGH	=	[0x02]
+
 class EPPS_Data:
 	DATA = 1
 

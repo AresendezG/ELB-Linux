@@ -1,7 +1,8 @@
 import asyncio
 import time
-import gpio_ctrl
-from i2c_types import LedMode, MOD_Rates, PowerLoad_Modes
+from gpio_ctrl import GPIO_PINS
+from gpio_ctrl import GPIO_CONTROL
+from i2c_types import LedMode, MOD_Rates, PowerLoad_Modes, ELB_GPIOs
 from i2c_types import CurrentSensors, TempSensors, VoltageSensors
 from smbus2 import SMBus
 
@@ -75,9 +76,37 @@ class ELB_i2c:
         i_vcc_rx = self.__ReadCurrentSensor(CurrentSensors.VCC_RX)
         i_vcc_tx = self.__ReadCurrentSensor(CurrentSensors.VCC_TX)
         return [i_vcc, i_vcc_rx, i_vcc_tx]
-
+    
+    def __TestGPIO_ELB_Out(self, gpioctrl, elb_pin: ELB_GPIOs, fixt_pin: GPIO_PINS) -> bool: #Returns pass/fail for both Low and High status
+        # enable/disable the ELB GPIO
+        self.bus.write_i2c_block_data(self.DEV_ADD, 142, elb_pin)
+        time.sleep(0.01)
+        # read RPI gpio status
+        gpio_status = gpioctrl.read_gpio(fixt_pin)
+        return gpio_status
+    
+    def __TestGPIO_ELB_In(self, gpioctrl, elb_pin: ELB_GPIOs, fixt_pin: GPIO_PINS) -> bool:
+        # enable/disable the RPi GPIOs
+        gpioctrl.write_gpio(fixt_pin, elb_pin[0])
+        time.sleep(0.01)
+        # read ELB gpio status
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, ELB_GPIOs.GPIO_IN_REG, 1)
+        retdata = [x for x in retdata]
+        gpio_status = retdata[0]&elb_pin[1]
+        return gpio_status
 
     # ------ Sequences ---------------
+
+    # Full GPIO Sequence
+    def Test_GPIO_all(self) -> list: #returns an array of the GPIO test results
+        # Start object to handle RPI GPIOs
+        gpioctrl = GPIO_CONTROL()
+        # Test Modsel
+
+
+
+        pass
+
     def led_sequence(self):
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])

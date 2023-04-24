@@ -1,7 +1,7 @@
 import RPi.GPIO as GPIO
 from gpio_ctrl import GPIO_PINS
 
-class GPIO_CTRL:
+class GPIO_CONTROL:
     def __init__(self) -> None:
         GPIO.setmode(GPIO.BCM)
         # Define inputs for the RPI and Outs for the ELB
@@ -13,6 +13,9 @@ class GPIO_CTRL:
         GPIO.setup(GPIO_PINS.RESET_L, GPIO.OUT)
         pass
 
+    def __del__(self):
+        GPIO.setall()
+    
     def read_gpio(pin: GPIO_PINS) -> bool:
         status = GPIO.input(pin)
         return status
@@ -23,7 +26,7 @@ class GPIO_CTRL:
         else:
             GPIO.output(pin, GPIO.LOW)
         return
-
+    
 
 class GPIO_PINS:
     #ELB PIN        #RPI Pin
