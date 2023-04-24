@@ -6,6 +6,7 @@ i2c_comm = ELB_i2c()
 print("--- ELB Testing Script --- ")
 
 
+'''
     def main(self):
         print("Getting the FWversion:")
         [dsp_ver, dsp_id, dsp_rev, fwver] = self.__checfw_ver()
@@ -28,3 +29,4 @@ print("--- ELB Testing Script --- ")
         print("LEDs Routine")
         self.led_sequence()
         # bus = SMBus()
+'''
