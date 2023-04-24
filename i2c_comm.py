@@ -1,6 +1,8 @@
 import asyncio
 import time
-from i2c_types import LedMode, TempSensors, VoltageSensors, MOD_Rates
+import gpio_ctrl
+from i2c_types import LedMode, MOD_Rates, PowerLoad_Modes
+from i2c_types import CurrentSensors, TempSensors, VoltageSensors
 from smbus2 import SMBus
 
 
@@ -36,22 +38,6 @@ class ELB_i2c:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 39, 2)
         fwver = retdata  
         return [dsp_ver, dsp_id, dsp_rev, fwver]
-
-    def __get_uut_sn(self) -> list:
-        # write page 0
-        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
-        # read SN from reg166  
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 166, 16)
-        serial_array = [x for x in retdata] #array that holds the serialnumber
-        serial_str = "".join(chr(x) for x in serial_array)
-        # read PN from reg148
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 148, 16)
-        pn_array = [x for x in retdata] #array that holds the part number
-        part_number = "".join(chr(x) for x in pn_array)
-        # read revision from reg164
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
-        revision = [x for x in retdata] # array that holds the rev number
-        return [serial_str, part_number, revision]
     
     # Function to test the temperature 
     def __ReadTempFnc(self, regaddress: int) -> float:
@@ -74,6 +60,22 @@ class ELB_i2c:
         for x in retdata:
             val = (val<<8) + x
         return val
+    
+    def __ReadCurrentSensor(self, regaddress: int) -> float:
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, regaddress, 2)
+        retdata = [x for x in retdata]
+        curr = ((retdata[0]<<8) + retdata[1])*0.001
+        return curr
+    
+    def __SetPL_ReadSensor(self, powermode: PowerLoad_Modes) -> list:
+        # Write the PowerLoad setting to UUT
+        self.bus.write_i2c_block_data(self.DEV_ADD, 135, powermode)
+        time.sleep(2) # wait 2 seconds for sensor stabilization
+        i_vcc = self.__ReadCurrentSensor(CurrentSensors.VCC)
+        i_vcc_rx = self.__ReadCurrentSensor(CurrentSensors.VCC_RX)
+        i_vcc_tx = self.__ReadCurrentSensor(CurrentSensors.VCC_TX)
+        return [i_vcc, i_vcc_rx, i_vcc_tx]
+
 
     # ------ Sequences ---------------
     def led_sequence(self):
@@ -131,30 +133,21 @@ class ELB_i2c:
         duty_ms = self.__ReadEPPS_Data(162, 2)
         return [freq, duty_percent, duty_ms]
 
-
-    def main(self):
-        print("Getting the FWversion:")
-        [dsp_ver, dsp_id, dsp_rev, fwver] = self.__checfw_ver()
-        print("DSP Version: ",dsp_ver)
-        print("DSP ID: ", dsp_id)
-        print("Getting UUT's SN: ")
-        [serial_number, part_number, revision] = self.__get_uut_sn()
-        print("Serial Number: ",serial_number)
-        print("Part Number: ",part_number)
-        print("Revision: ",revision)
-        print("Firmware version: {}.{}".format(fwver[0], fwver[1]))
-        self.Get_AllVoltages()
-        self.Get_AllTemps()
-        print("ePPS Data:")
-        [freq, duty, dutyms] = self.Get_Alll_EPPSData()
-        print("ePPS Frequency: ",freq)
-        print("ePPS Duty %",duty)
-        print("ePPS Duty ms",dutyms)
-        self.Get_Alll_EPPSData()        
-        print("LEDs Routine")
-        self.led_sequence()
-        # bus = SMBus()
-
+    def Get_UUT_SN(self) -> list:
+        # write page 0
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
+        # read SN from reg166  
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 166, 16)
+        serial_array = [x for x in retdata] #array that holds the serialnumber
+        serial_str = "".join(chr(x) for x in serial_array)
+        # read PN from reg148
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 148, 16)
+        pn_array = [x for x in retdata] #array that holds the part number
+        part_number = "".join(chr(x) for x in pn_array)
+        # read revision from reg164
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
+        revision = [x for x in retdata] # array that holds the rev number
+        return [serial_str, part_number, revision]
 
     def PRBS_Start(self, modrate: MOD_Rates): 
         # start prbs!!!!!!!!!!!!!!!!!!!!
@@ -316,3 +309,36 @@ class ELB_i2c:
             self.bus.write_i2c_block_data(self.DEV_ADD, [160, 0x00])
         
             return [lol_status, hostchkber]
+
+    def CurrentSequence(self) -> list:
+        print("Running Current Sequence: ")
+        # load/current all on/off
+        # all loads off
+        # put in low power mode
+        print("Power Load OFF and LowPower Settings")
+        self.bus.write_i2c_block_data(self.DEV_ADD, [26, 0x30])
+        self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
+        time.sleep(5)
+        # get base vcccurr
+        # read currents
+        print("Reading Base Current:")
+        i_vcc_base = self.__ReadCurrentSensor(174)
+        print("Base Current: ")
+        # Load settings #1
+        [i_vcc_0p8, i_vcc_rx_4p0, i_vcc_tx_1p6] = self.__SetPL_ReadSensor(PowerLoad_Modes.LOADS_1)
+        # Load settings #2
+        [i_vcc_1p6, i_vcc_rx_1p6, i_vcc_tx_4p0] = self.__SetPL_ReadSensor(PowerLoad_Modes.LOADS_2) 
+        # Load settings #3
+        [i_vcc_3p2, i_vcc_rx_3p2, i_vcc_tx_0p8] = self.__SetPL_ReadSensor(PowerLoad_Modes.LOADS_3)   
+        # Load settings $4
+        [i_vcc, i_vcc_rx_0p8, i_vcc_tx_3p2] = self.__SetPL_ReadSensor(PowerLoad_Modes.LOADS_4)
+        # all loads off
+        self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
+        # put in hi power mode
+        self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
+        time.sleep(10)
+        vcc_currents = [i_vcc_base, i_vcc_0p8, i_vcc_1p6, i_vcc_3p2]
+        rx_currents = [i_vcc_rx_4p0, i_vcc_rx_0p8, i_vcc_rx_1p6, i_vcc_rx_3p2]
+        tx_currents = [i_vcc_tx_4p0, i_vcc_tx_0p8, i_vcc_tx_1p6, i_vcc_tx_3p2]
+        return [vcc_currents, rx_currents, tx_currents]
+
