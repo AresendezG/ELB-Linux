@@ -99,13 +99,27 @@ class ELB_i2c:
 
     # Full GPIO Sequence
     def Test_GPIO_all(self) -> list: #returns an array of the GPIO test results
+        print("***\tGPIO Test\t***")
         # Start object to handle RPI GPIOs
         gpioctrl = GPIO_CONTROL()
-        # Test Modsel
-
-
-
-        pass
+        self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x01])
+        time.sleep(1)
+        # --- Outputs
+        pin_intl_low        = self.__TestGPIO_ELB_Out(gpioctrl, ELB_GPIOs.INT_L_LOW, GPIO_PINS.INT_L)
+        pin_intl_high       = self.__TestGPIO_ELB_Out(gpioctrl, ELB_GPIOs.INT_L_HIGH, GPIO_PINS.INT_L)
+        pin_presentl_low    = self.__TestGPIO_ELB_Out(gpioctrl, ELB_GPIOs.PRESENT_L_LOW, GPIO_PINS.PRESENT_L)
+        pin_presentl_high   = self.__TestGPIO_ELB_Out(gpioctrl, ELB_GPIOs.PRESENT_L_LOW, GPIO_PINS.PRESENT_L)
+        # -- Inputs
+        pin_modsel_low  = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.MODSEL_LOW, GPIO_PINS.MODSEL)
+        pin_modsel_high = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.MODSEL_HIGH, GPIO_PINS.MODSEL)
+        pin_lpmode_low  = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.LPMODE_LOW, GPIO_PINS.LPMODE)
+        pin_lpmode_high = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.LPMODE_HIGH, GPIO_PINS.LPMODE)
+        pin_resetl_low  = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.RESET_L_LOW, GPIO_PINS.RESET_L)
+        pin_resetl_high = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.RESET_L_HIGH, GPIO_PINS.RESET_L)
+        results = [pin_intl_high, pin_intl_low, pin_presentl_low, pin_presentl_high, pin_modsel_low, pin_modsel_high, pin_lpmode_low, pin_lpmode_high, pin_resetl_low, pin_resetl_high]
+        # no test mode
+        self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x00])
+        return results
 
     def led_sequence(self):
         # write page 3
@@ -340,11 +354,11 @@ class ELB_i2c:
             return [lol_status, hostchkber]
 
     def CurrentSequence(self) -> list:
-        print("Running Current Sequence: ")
+        print("***\tRunning Current Sequence\t***")
         # load/current all on/off
         # all loads off
         # put in low power mode
-        print("Power Load OFF and LowPower Settings")
+        print("**Power Load OFF and LowPower Settings**")
         self.bus.write_i2c_block_data(self.DEV_ADD, [26, 0x30])
         self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
         time.sleep(5)
@@ -352,7 +366,7 @@ class ELB_i2c:
         # read currents
         print("Reading Base Current:")
         i_vcc_base = self.__ReadCurrentSensor(174)
-        print("Base Current: ")
+        print("Base Current: {:.4f}".format(i_vcc_base))
         # Load settings #1
         [i_vcc_0p8, i_vcc_rx_4p0, i_vcc_tx_1p6] = self.__SetPL_ReadSensor(PowerLoad_Modes.LOADS_1)
         # Load settings #2
@@ -364,6 +378,7 @@ class ELB_i2c:
         # all loads off
         self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
         # put in hi power mode
+        print("**Setting up Hi Power mode**")
         self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
         time.sleep(10)
         vcc_currents = [i_vcc_base, i_vcc_0p8, i_vcc_1p6, i_vcc_3p2]

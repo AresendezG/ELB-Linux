@@ -3,7 +3,16 @@ from i2c_comm import ELB_i2c
 
 i2c_comm = ELB_i2c()
 
-print("--- ELB Testing Script --- ")
+print("--- ELB Test Script --- ")
+
+print("Calling GPIO Test")
+gpio_results = i2c_comm.Test_GPIO_all()
+for rsl in range(gpio_results.count()):
+    print("GPIO Result {}")
+
+print("Calling Current Test")
+current_results = i2c_comm.CurrentSequence()
+
 
 
 '''
