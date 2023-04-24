@@ -25,6 +25,12 @@ class TempSensors:
 	SHELL_F	= 148
 	SHELL_R	= 152 
 
+# Configuration: current sensors reg addresses
+class CurrentSensors:
+	VCC		= 174
+	VCC_RX	= 176
+	VCC_TX	= 178
+
 class EPPS_Data:
 	DATA = 1
 
@@ -39,5 +45,5 @@ class PowerLoad_Modes:
 	LOADS_1		=	[0x08, 0x02, 0x01]
 	LOADS_2		= 	[0x02, 0x08, 0x02]
 	LOADS_3		= 	[0x04, 0x01, 0x04]
-	LOADS_5		= 	[0x01, 0x04, 0x00]
+	LOADS_4		= 	[0x01, 0x04, 0x00]
 	
