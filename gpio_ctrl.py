@@ -30,9 +30,9 @@ class GPIO_CONTROL:
 
 class GPIO_PINS:
     #ELB PIN        #RPI Pin
-    LPMODE      =   27
-    MODSEL      =   28
-    RESET_L     =   29
+    LPMODE      =   19
+    MODSEL      =   13
+    RESET_L     =   16
     # Inputs for the Pi
-    INT_L       =   30
-    PRESENT_L   =   32
+    INT_L       =   26
+    PRESENT_L   =   20
