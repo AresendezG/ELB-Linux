@@ -150,6 +150,8 @@ class ELB_i2c:
         print("***\tGPIO Test\t***")
         # Start object to handle RPI GPIOs
         gpioctrl = GPIO_CONTROL()
+        # Write Page 3
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])     
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x01])
         time.sleep(1)
         # --- Outputs
@@ -182,6 +184,9 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
 
     def Get_AllVoltages(self) -> list:
+        print("***\tVoltage Sensor Reading\t***")
+        # write page 3
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         vcc = self.__ReadVoltageFnc(VoltageSensors.VCC)
         print("Reading VCC Voltage: {:.4f}".format(vcc))
         vcctx = self.__ReadVoltageFnc(VoltageSensors.VCCTX)
@@ -193,6 +198,9 @@ class ELB_i2c:
         return [vcc, vcctx, vccrx, vbatt]
 
     def Get_AllTemps(self) -> list:
+        print("***\tTempSensor Reading\t***")
+        # write page 3
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         uc_temp = self.__ReadTempFnc(TempSensors.UC)
         print("Temp Sensor uC: {:.4f}".format(uc_temp))
         rt_temp = self.__ReadTempFnc(TempSensors.RTMR)
@@ -209,6 +217,7 @@ class ELB_i2c:
     
 
     def Get_Alll_EPPSData(self) -> list:
+        print("***\tGetting ePPS Data\t***")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # ePPS Start capture:
@@ -225,6 +234,7 @@ class ELB_i2c:
         return [freq, duty_percent, duty_ms]
 
     def Get_UUT_SN(self) -> list:
+        print("***\tGet Serial Number\t***")
         # write page 0
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
         # read SN from reg166  
@@ -238,6 +248,7 @@ class ELB_i2c:
         # read revision from reg164
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
         revision = [x for x in retdata] # array that holds the rev number
+        print("Serial Number: "+serial_str)
         return [serial_str, part_number, revision]
     
     def Get_InsertionCount(self) -> list:
@@ -252,8 +263,6 @@ class ELB_i2c:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 131, 1)
         retdata = [x for x in retdata]
         ins_nibb = retdata[0]
-        print("Accumulate: ",ins_accum)
-        print("Nibble: ",ins_nibb)
         return [ins_accum, ins_nibb]
 
     def PRBS_Start(self, modrate: MOD_Rates): 
@@ -409,11 +418,11 @@ class ELB_i2c:
                 lol_status[ln] = hostchklol & (1<<ln)
             
             # write page 0x13
-            self.bus.write_i2c_block_data(self.DEV_ADD, [127, 0x13])
+            self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
             # disable host side gen
-            self.bus.write_i2c_block_data(self.DEV_ADD, [144, 0x00])
+            self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
             # disable host side chk
-            self.bus.write_i2c_block_data(self.DEV_ADD, [160, 0x00])
+            self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
         
             return [lol_status, hostchkber]
 
@@ -423,7 +432,7 @@ class ELB_i2c:
         # all loads off
         # put in low power mode
         print("**Power Load OFF and LowPower Settings**")
-        self.bus.write_i2c_block_data(self.DEV_ADD, [26, 0x30])
+        self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x30])
         self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
         time.sleep(5)
         # get base vcccurr

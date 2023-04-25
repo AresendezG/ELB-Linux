@@ -5,13 +5,27 @@ i2c_comm = ELB_i2c()
 
 print("--- ELB Test Script --- ")
 
-print("Calling GPIO Test")
+print("Event: Calling GPIO Test")
 gpio_results = i2c_comm.Test_GPIO_all()
-for rsl in range(gpio_results.count()):
-    print("GPIO Result {}")
+for rsl in range(len(gpio_results)):
+    print("GPIO Result: {}".format(gpio_results[rsl]))
 
+
+print("Event: Calling Insertion Counter")
+[ins_accum, ins_nibb] = i2c_comm.Get_InsertionCount()
+print("Accumulate: ",ins_accum)
+print("Nibble: ",ins_nibb)
+
+print("Event: Calling Read Voltage Sensors")
+volt_results = i2c_comm.Get_AllVoltages()
+
+print("Event: Calling the Temp Sensor reading")
+temp_results = i2c_comm.Get_AllTemps()
+
+i2c_comm.Get_UUT_SN()
 print("Calling Current Test")
 current_results = i2c_comm.CurrentSequence()
+print(current_results)
 
 
 
