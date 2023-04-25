@@ -1,6 +1,6 @@
 import asyncio
 import time
-from gpio_ctrl import GPIO_PINS
+from i2c_types import GPIO_PINS
 from gpio_ctrl import GPIO_CONTROL
 from i2c_types import LedMode, MOD_Rates, PowerLoad_Modes, ELB_GPIOs
 from i2c_types import CurrentSensors, TempSensors, VoltageSensors

@@ -64,3 +64,11 @@ class PowerLoad_Modes:
 	LOADS_3		= 	[0x04, 0x01, 0x04]
 	LOADS_4		= 	[0x01, 0x04, 0x00]
 	
+class GPIO_PINS:
+    #ELB PIN        #RPI Pin
+    LPMODE      =   19
+    MODSEL      =   13
+    RESET_L     =   16
+    # Inputs for the Pi
+    INT_L       =   26
+    PRESENT_L   =   20

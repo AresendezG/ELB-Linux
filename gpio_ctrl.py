@@ -1,5 +1,5 @@
 import RPi.GPIO as GPIO
-from gpio_ctrl import GPIO_PINS
+from i2c_types import GPIO_PINS
 
 class GPIO_CONTROL:
     def __init__(self) -> None:
@@ -14,13 +14,13 @@ class GPIO_CONTROL:
         pass
 
     def __del__(self):
-        GPIO.setall()
+        GPIO.cleanup()
     
-    def read_gpio(pin: GPIO_PINS) -> bool:
+    def read_gpio(self, pin: GPIO_PINS) -> bool:
         status = GPIO.input(pin)
         return status
 
-    def write_gpio(pin: GPIO_PINS, status: bool):
+    def write_gpio(self, pin: GPIO_PINS, status: bool):
         if status:
             GPIO.output(pin, GPIO.HIGH)
         else:
@@ -28,11 +28,3 @@ class GPIO_CONTROL:
         return
     
 
-class GPIO_PINS:
-    #ELB PIN        #RPI Pin
-    LPMODE      =   19
-    MODSEL      =   13
-    RESET_L     =   16
-    # Inputs for the Pi
-    INT_L       =   26
-    PRESENT_L   =   20
