@@ -22,23 +22,6 @@ class ELB_i2c:
         self.bus = SMBus(self.DEVICE_BUS)
         print("i2c Bus started at address: {}",self.DEV_ADD)
         pass
-
-    def __checfw_ver(self) -> list:
-        # Write Page 3
-        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])        
-        # Retrieve data from registers
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 182, 4)
-        retdata = [x for x in retdata]
-        dsp_ver = ((retdata[0]<<24) + (retdata[1]<<16) + (retdata[2]<<8) + retdata[3])
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 186, 4)
-        retdata = [x for x in retdata]
-        dsp_id = ((retdata[0]<<24) + (retdata[1]<<16) + (retdata[2]<<8) + retdata[3])
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 190, 1)
-        retdata = [x for x in retdata]
-        dsp_rev = retdata[0]
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 39, 2)
-        fwver = retdata  
-        return [dsp_ver, dsp_id, dsp_rev, fwver]
     
     # Function to test the temperature 
     def __ReadTempFnc(self, regaddress: int) -> float:
@@ -97,6 +80,29 @@ class ELB_i2c:
 
     # ------ Sequences ---------------
 
+    def GetFW_Version(self) -> list:
+        print("***\tRetrieve FW Version\t***")
+        # Write Page 3
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])        
+        # Retrieve data from registers
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 182, 4)
+        retdata = [x for x in retdata]
+        dsp_ver = ((retdata[0]<<24) + (retdata[1]<<16) + (retdata[2]<<8) + retdata[3])
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 186, 4)
+        retdata = [x for x in retdata]
+        dsp_id = ((retdata[0]<<24) + (retdata[1]<<16) + (retdata[2]<<8) + retdata[3])
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 190, 1)
+        retdata = [x for x in retdata]
+        dsp_rev = retdata[0]
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 39, 2)
+        fwver = retdata  
+        print("DSP Version: ",dsp_ver)
+        print("DSP ID: ",dsp_id)
+        print("DSP Rev: ",dsp_rev)
+        print("FW Version: {}.{}".format(fwver[0], fwver[1]))
+        return [dsp_ver, dsp_id, dsp_rev, fwver]
+
+
     # Full GPIO Sequence
     def Test_GPIO_all(self) -> list: #returns an array of the GPIO test results
         print("***\tGPIO Test\t***")
@@ -121,7 +127,7 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x00])
         return results
 
-    def led_sequence(self):
+    def TestLED_Sequence(self):
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # flash LEDs
@@ -191,6 +197,22 @@ class ELB_i2c:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
         revision = [x for x in retdata] # array that holds the rev number
         return [serial_str, part_number, revision]
+    
+    def Get_InsertionCount(self) -> list:
+        print("***\tInsertion Counter\t***")
+        # Read the insertion counter
+        # write page 0x03
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x03])
+        # read accum
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 132, 2)
+        retdata = [x for x in retdata]
+        ins_accum = ((retdata[0]<<8) + retdata[1])
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 131, 1)
+        retdata = [x for x in retdata]
+        ins_nibb = retdata[0]
+        print("Accumulate: ",ins_accum)
+        print("Nibble: ",ins_nibb)
+        return [ins_accum, ins_nibb]
 
     def PRBS_Start(self, modrate: MOD_Rates): 
         # start prbs!!!!!!!!!!!!!!!!!!!!
@@ -354,7 +376,7 @@ class ELB_i2c:
             return [lol_status, hostchkber]
 
     def CurrentSequence(self) -> list:
-        print("***\tRunning Current Sequence\t***")
+        print("***\tCurrent Sensors\t***")
         # load/current all on/off
         # all loads off
         # put in low power mode
