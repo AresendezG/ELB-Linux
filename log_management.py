@@ -74,7 +74,8 @@ class LOG_Manager():
 
 
     def logtofile(self, line: str):
-        self.logfile.write(line)
+        print(line) # Use same fnc to display info to screen
+        self.logfile.write(line + "\n") # Append new Line
         return
 
     def logresult(self, result: str, testname:str, measurement:str, highlim: str, lowlim: str):
