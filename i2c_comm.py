@@ -18,9 +18,9 @@ class ELB_i2c:
     #function declaration
 
     def __init__(self) -> None:
-        print("Init SMBus")
+        print("***\tInitialize SMBus\t***")
         self.bus = SMBus(self.DEVICE_BUS)
-        print("i2c Bus started at address: {}",self.DEV_ADD)
+        print("i2c BUS Communication started at address: {}".format(self.DEV_ADD))
         pass
     
     # Function to test the temperature 
@@ -77,6 +77,48 @@ class ELB_i2c:
         retdata = [x for x in retdata]
         gpio_status = retdata[0]&elb_pin[1]
         return gpio_status
+    
+    def __WriteELB_SN(self, serial: str):
+        print("***\tWriting SN to ELB\t***")
+        # write password
+        self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 16, 17])
+        # write page 0
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0]) 
+        # write serial # 16 bytes
+        if len(serial)<16:
+            # pad the serial number up to 16 chars with empty spaces if needed
+            serial = serial+"".join(" " for x in range(16-len(serial)))
+        elif len(serial)>16:
+            # truncate
+            serial = serial[0:16]
+        # Convert from string to 
+        self.snlst = [166]+[ord(x) for x in self.snwr]
+        self.bus.write_i2c_block_data(self.DEV_ADD, self.snlst)
+        self.pnwr = self.testpn
+        if len(self.testpn)<16:
+            # pad with spaces
+            self.pnwr = self.testpn+"".join(" " for x in range(16-len(self.testpn)))
+        elif len(self.testpn)>16:
+            # truncate
+            self.pnwr = self.testpn[0:16]
+        self.pnlst = [148]+[ord(x) for x in self.pnwr]
+        self.bus.write_i2c_block_data(self.DEV_ADD, self.pnlst) 
+        self.revwr = self.testrev
+        if len(self.testrev)<2:
+            # pad with spaces
+            self.revwr = self.testrev+"".join(" " for x in range(2-len(self.testrev)))
+        elif len(self.testrev)>2:
+            # truncate
+            self.revwr = self.testrev[0:2]
+        self.revlst = [164]+[ord(x) for x in self.revwr]
+        self.bus.write_i2c_block_data(self.DEV_ADD, self.revlst)
+        self.pn2lst = [224]+[ord(x) for x in self.testpn[0:12]]+[ord(x) for x in "REV "]+[ord(x) for x in self.testrev]
+        if len(self.pn2lst)>33: # 32 bytes + addr
+            self.pn2lst = self.pn2lst[0:33]
+        self.bus.write_i2c_block_data(self.DEV_ADD, self.pn2lst) 
+        # save sn, write password
+        self.bus.write_i2c_block_data(self.DEV_ADD, [122, 0, 0, 0, 16])
+        pass
 
     # ------ Sequences ---------------
 
