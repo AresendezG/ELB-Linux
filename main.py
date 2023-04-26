@@ -5,8 +5,8 @@ from log_management import LOG_Manager
 # Change these variables for user settings
 default_path = "../test_results/"
 uut_serial = "ZP3923110084"
-
 i2c_comm = ELB_i2c()
+
 try:
     # Run tests only if Logfiles can be created!
     logs = LOG_Manager(uut_serial, default_path)
@@ -38,8 +38,15 @@ try:
         logs.logtofile("Temp Sensor_{} Result: {}".format(rsl, temp_results[rsl]))
     logs.logtofile("Calling Current Test")
     current_results = i2c_comm.CurrentSequence()
-    logs.logtofile(current_results)
+    
+    for rsl in range(len(current_results[0])):
+        logs.logtofile("VCC Sensor_{} Result: {}".format(rsl, current_results[0][rsl]))
+        logs.logtofile("VCC_RX Sensor_{} Result: {}".format(rsl, current_results[1][rsl]))
+        logs.logtofile("VCC_TX Sensor_{} Result: {}".format(rsl, current_results[2][rsl]))
+
+except KeyboardInterrupt:
+    logs.logtofile("Warning: Test Aborted by User!")
 
 except:
-    print("ERROR: Exception occurred during th handilig")
+    print("ERROR: Exception ocurred during the Execution of the test")
     #todo: create a file that logs the exception details

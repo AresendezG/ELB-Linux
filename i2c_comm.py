@@ -9,18 +9,24 @@ from smbus2 import SMBus
 
 class ELB_i2c:
     #-- Class variables definitions
-    #define i2c BUS to be used
+    # Define i2c Bus as Main
     DEVICE_BUS = 1
+    # Define ELB i2c Address:
     DEV_ADD = 0x50
-    #define bus object
+    # Define bus object
     bus = None
-
+    # Define GPIO Controller
+    gpioctrl = None
+    
     #function declaration
 
     def __init__(self) -> None:
         print("***\tInitialize SMBus\t***")
         self.bus = SMBus(self.DEVICE_BUS)
-        print("i2c BUS Communication started at address: {}".format(self.DEV_ADD))
+        print("Event: i2c BUS Communication with host at address: {}".format(self.DEV_ADD))
+        # Start object to handle RPI GPIOs
+        self.gpioctrl = GPIO_CONTROL()
+        print("Event: GPIO Control Started")
         pass
     
     # Function to test the temperature 
@@ -60,17 +66,17 @@ class ELB_i2c:
         i_vcc_tx = self.__ReadCurrentSensor(CurrentSensors.VCC_TX)
         return [i_vcc, i_vcc_rx, i_vcc_tx]
     
-    def __TestGPIO_ELB_Out(self, gpioctrl, elb_pin: ELB_GPIOs, fixt_pin: GPIO_PINS) -> bool: #Returns pass/fail for both Low and High status
+    def __TestGPIO_ELB_Out(self, elb_pin: ELB_GPIOs, fixt_pin: GPIO_PINS) -> bool: #Returns pass/fail for both Low and High status
         # enable/disable the ELB GPIO
         self.bus.write_i2c_block_data(self.DEV_ADD, 142, elb_pin)
         time.sleep(0.01)
         # read RPI gpio status
-        gpio_status = gpioctrl.read_gpio(fixt_pin)
+        gpio_status = self.gpioctrl.read_gpio(fixt_pin)
         return gpio_status
     
-    def __TestGPIO_ELB_In(self, gpioctrl, elb_pin: ELB_GPIOs, fixt_pin: GPIO_PINS) -> bool:
+    def __TestGPIO_ELB_In(self, elb_pin: ELB_GPIOs, fixt_pin: GPIO_PINS) -> bool:
         # enable/disable the RPi GPIOs
-        gpioctrl.write_gpio(fixt_pin, elb_pin[0])
+        self.gpioctrl.write_gpio(fixt_pin, elb_pin[0])
         time.sleep(0.01)
         # read ELB gpio status
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, ELB_GPIOs.GPIO_IN_REG, 1)
@@ -148,24 +154,23 @@ class ELB_i2c:
     # Full GPIO Sequence
     def Test_GPIO_all(self) -> list: #returns an array of the GPIO test results
         print("***\tGPIO Test\t***")
-        # Start object to handle RPI GPIOs
-        gpioctrl = GPIO_CONTROL()
+
         # Write Page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])     
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x01])
         time.sleep(1)
         # --- Outputs
-        pin_intl_low        = self.__TestGPIO_ELB_Out(gpioctrl, ELB_GPIOs.INT_L_LOW, GPIO_PINS.INT_L)
-        pin_intl_high       = self.__TestGPIO_ELB_Out(gpioctrl, ELB_GPIOs.INT_L_HIGH, GPIO_PINS.INT_L)
-        pin_presentl_low    = self.__TestGPIO_ELB_Out(gpioctrl, ELB_GPIOs.PRESENT_L_LOW, GPIO_PINS.PRESENT_L)
-        pin_presentl_high   = self.__TestGPIO_ELB_Out(gpioctrl, ELB_GPIOs.PRESENT_L_LOW, GPIO_PINS.PRESENT_L)
+        pin_intl_low        = self.__TestGPIO_ELB_Out(ELB_GPIOs.INT_L_LOW, GPIO_PINS.INT_L)
+        pin_intl_high       = self.__TestGPIO_ELB_Out(ELB_GPIOs.INT_L_HIGH, GPIO_PINS.INT_L)
+        pin_presentl_low    = self.__TestGPIO_ELB_Out(ELB_GPIOs.PRESENT_L_LOW, GPIO_PINS.PRESENT_L)
+        pin_presentl_high   = self.__TestGPIO_ELB_Out(ELB_GPIOs.PRESENT_L_LOW, GPIO_PINS.PRESENT_L)
         # -- Inputs
-        pin_modsel_low  = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.MODSEL_LOW, GPIO_PINS.MODSEL)
-        pin_modsel_high = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.MODSEL_HIGH, GPIO_PINS.MODSEL)
-        pin_lpmode_low  = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.LPMODE_LOW, GPIO_PINS.LPMODE)
-        pin_lpmode_high = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.LPMODE_HIGH, GPIO_PINS.LPMODE)
-        pin_resetl_low  = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.RESET_L_LOW, GPIO_PINS.RESET_L)
-        pin_resetl_high = self.__TestGPIO_ELB_In(gpioctrl, ELB_GPIOs.RESET_L_HIGH, GPIO_PINS.RESET_L)
+        pin_modsel_low  = self.__TestGPIO_ELB_In(ELB_GPIOs.MODSEL_LOW, GPIO_PINS.MODSEL)
+        pin_modsel_high = self.__TestGPIO_ELB_In(ELB_GPIOs.MODSEL_HIGH, GPIO_PINS.MODSEL)
+        pin_lpmode_low  = self.__TestGPIO_ELB_In(ELB_GPIOs.LPMODE_LOW, GPIO_PINS.LPMODE)
+        pin_lpmode_high = self.__TestGPIO_ELB_In(ELB_GPIOs.LPMODE_HIGH, GPIO_PINS.LPMODE)
+        pin_resetl_low  = self.__TestGPIO_ELB_In(ELB_GPIOs.RESET_L_LOW, GPIO_PINS.RESET_L)
+        pin_resetl_high = self.__TestGPIO_ELB_In(ELB_GPIOs.RESET_L_HIGH, GPIO_PINS.RESET_L)
         results = [pin_intl_high, pin_intl_low, pin_presentl_low, pin_presentl_high, pin_modsel_low, pin_modsel_high, pin_lpmode_low, pin_lpmode_high, pin_resetl_low, pin_resetl_high]
         # no test mode
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x00])

@@ -18,11 +18,16 @@ class GPIO_CONTROL:
         GPIO.setup(GPIO_PINS.MODSEL, GPIO.OUT)
         GPIO.setup(GPIO_PINS.RESET_L, GPIO.OUT)
 
-        # Setting up all outs to High
+        # Setting up all outs to the required mode:
         GPIO.output(GPIO_PINS.LPMODE, GPIO.LOW)
         GPIO.output(GPIO_PINS.MODSEL, GPIO.LOW)
         GPIO.output(GPIO_PINS.RESET_L, GPIO.HIGH)
-        print("MSG: Configuring the GPIOs to default")
+        print("MSG: Configured the GPIOs to default")
+
+        GPIO.setup(17, GPIO.OUT)
+        self.p = GPIO.PWM(17, 1)  # channel=17 1Hz to create the PPS
+        self.p.start(0)
+        print("MSG: Configured the PPS")
         time.sleep(2)
         pass
 
@@ -31,6 +36,7 @@ class GPIO_CONTROL:
         GPIO.output(GPIO_PINS.LPMODE, GPIO.LOW)
         GPIO.output(GPIO_PINS.MODSEL, GPIO.LOW)
         GPIO.output(GPIO_PINS.RESET_L, GPIO.HIGH)
+        self.p.stop()
         time.sleep(2)
     
     def read_gpio(self, pin: GPIO_PINS) -> bool:
