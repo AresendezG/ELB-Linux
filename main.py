@@ -27,6 +27,7 @@ try:
     [ins_accum, ins_nibb] = i2c_comm.Get_InsertionCount()
     logs.logtofile("Accumulate: {}".format(ins_accum))
     logs.logtofile("Nibble: {}".format(ins_nibb))  
+    
     logs.logtofile("Event: Calling Read Voltage Sensors")
     volt_results = i2c_comm.Get_AllVoltages()
     for rsl in range(len(volt_results)):
@@ -36,9 +37,15 @@ try:
     temp_results = i2c_comm.Get_AllTemps()
     for rsl in range(len(temp_results)):
         logs.logtofile("Temp Sensor_{} Result: {}".format(rsl, temp_results[rsl]))
+
+    logs.logtofile("Event: Calling the EPPS test")
+    [freq, duty_percent, duty_ms] = i2c_comm.Get_Alll_EPPSData()
+    logs.logtofile("Frequency: {}".format(freq))
+    logs.logtofile("Duty percent: {}".format(duty_percent))
+    logs.logtofile("Duty in ms: {}".format(duty_ms))
+    
     logs.logtofile("Calling Current Test")
     current_results = i2c_comm.CurrentSequence()
-    
     for rsl in range(len(current_results[0])):
         logs.logtofile("VCC Sensor_{} Result: {}".format(rsl, current_results[0][rsl]))
         logs.logtofile("VCC_RX Sensor_{} Result: {}".format(rsl, current_results[1][rsl]))
