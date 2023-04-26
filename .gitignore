@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# ignore the logfiles created by this script
+test_results/
+
 # Distribution / packaging
 .Python
 build/

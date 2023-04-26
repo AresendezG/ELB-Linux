@@ -3,7 +3,7 @@ from i2c_comm import ELB_i2c
 from log_management import LOG_Manager
 
 # Change these variables for user settings
-default_path = "~/elb_results/"
+default_path = "/test_results/"
 uut_serial = "ZP3923110084"
 
 i2c_comm = ELB_i2c()
