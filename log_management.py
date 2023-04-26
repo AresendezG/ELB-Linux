@@ -3,7 +3,7 @@ import datetime
 
 class LOG_Manager():
     
-    def __init__(self, uut_serial: str, def_path: str) -> bool:
+    def __init__(self, uut_serial: str, def_path: str) -> None:
         # Var definitions
         self.default_path = def_path
         self.logfile = None     # Handler of the plaintxt logfile
@@ -18,8 +18,13 @@ class LOG_Manager():
             raise TypeError("ERROR: Expected a Serial Number as Parameter")        
         dir_status = self.__validate_def_path()
         files_status = self.__OpenLogFiles()
-        self.__init_logfile()
-        return (dir_status and files_status)
+        
+        if (dir_status and files_status):
+            self.__init_logfile()
+            pass
+        else:
+            raise FileExistsError
+        
     
     def __del__(self):
         self.logfile.close()
@@ -69,9 +74,11 @@ class LOG_Manager():
         self.logtofile("Juniper Electric Loopback Test Log\n")
         self.logtofile("=====================\n")
         self.logtofile("Test Date: {}\n".format(self.logfiletime))
-        self.logresult("Juniper Electric Loopback TestResults\n")
-        self.logresult("Test Date,{}\n".format(self.logfiletime))
-        self.logresult("Result,Test Name,High Limit,Measurement,Low Limit\n")
+        self.logtofile("UUT SN: "+self.serial)
+        self.resultsfile.write("Juniper Electric Loopback TestResults\n")
+        self.resultsfile.write("Test Date,{}\n".format(self.logfiletime))
+        self.resultsfile.write("UUT SN,{}".format(self.serial))
+        self.resultsfile.write("Result,Test Name,High Limit,Measurement,Low Limit\n")
 
 
     def logtofile(self, line: str):
