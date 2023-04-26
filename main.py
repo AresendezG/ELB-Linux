@@ -4,7 +4,7 @@ from log_management import LOG_Manager
 
 # Change these variables for user settings
 default_path = "../test_results/"
-uut_serial = "ZP3923110084"
+uut_serial = "ZP3923110080"
 i2c_comm = ELB_i2c()
 
 try:

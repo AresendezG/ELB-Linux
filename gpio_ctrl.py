@@ -13,15 +13,12 @@ class GPIO_CONTROL:
         # Define inputs for the RPI and Outs for the ELB
         GPIO.setup(GPIO_PINS.INT_L, GPIO.IN)
         GPIO.setup(GPIO_PINS.PRESENT_L, GPIO.IN)
-        # Define outputs for the RPI and Outs for the 
+        # Define outputs for the RPI and Outs for the ELB 
         GPIO.setup(GPIO_PINS.LPMODE, GPIO.OUT)
         GPIO.setup(GPIO_PINS.MODSEL, GPIO.OUT)
         GPIO.setup(GPIO_PINS.RESET_L, GPIO.OUT)
 
-        # Setting up all outs to the required mode:
-        GPIO.output(GPIO_PINS.LPMODE, GPIO.LOW)
-        GPIO.output(GPIO_PINS.MODSEL, GPIO.LOW)
-        GPIO.output(GPIO_PINS.RESET_L, GPIO.HIGH)
+        self.config_pins_todefault()
         print("MSG: Configured the GPIOs to default")
 
         GPIO.setup(17, GPIO.OUT)
@@ -33,9 +30,7 @@ class GPIO_CONTROL:
 
     def __del__(self):
         print("MSG: Cleaning GPIO Config")
-        GPIO.output(GPIO_PINS.LPMODE, GPIO.LOW)
-        GPIO.output(GPIO_PINS.MODSEL, GPIO.LOW)
-        GPIO.output(GPIO_PINS.RESET_L, GPIO.HIGH)
+        self.config_pins_todefault()
         self.p.stop()
         time.sleep(2)
     
@@ -50,6 +45,13 @@ class GPIO_CONTROL:
             GPIO.output(pin, GPIO.LOW)
         return
     
+    def config_pins_todefault(self):
+        # Setting up all outs to the way they're supposed to be 
+        # GPIO.output(GPIO_PINS.LPMODE, GPIO.LOW)
+        GPIO.output(GPIO_PINS.MODSEL, GPIO.LOW)
+        GPIO.output(GPIO_PINS.RESET_L, GPIO.HIGH)
+
+
     def reset_uut(self, wait_time: int):
         GPIO.output(GPIO_PINS.RESET_L, GPIO.LOW)
         time.sleep(2)

@@ -43,9 +43,9 @@ class ELB_GPIOs:
 	RESET_L_LOW    	=   [0, 0x04]
 	RESET_L_HIGH	=	[1, 0x04]
     # ELB Outputs
-	INT_L_LOW       =   [0x00]
+	INT_L_HIGH      =   [0x00]
 	PRESENT_L_LOW   =   [0x00]
-	INT_L_HIGH		=	[0x01]
+	INT_L_LOW		=	[0x01]
 	PRESENT_L_HIGH	=	[0x02]
 
 class EPPS_Data:
@@ -66,9 +66,9 @@ class PowerLoad_Modes:
 	
 class GPIO_PINS:
     #ELB PIN        #RPI Pin
-    LPMODE      =   19
+    LPMODE      =   20
     MODSEL      =   13
     RESET_L     =   16
     # Inputs for the Pi
     INT_L       =   26
-    PRESENT_L   =   20
+    PRESENT_L   =   19

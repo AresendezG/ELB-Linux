@@ -163,7 +163,7 @@ class ELB_i2c:
         pin_intl_low        = self.__TestGPIO_ELB_Out(ELB_GPIOs.INT_L_LOW, GPIO_PINS.INT_L)
         pin_intl_high       = self.__TestGPIO_ELB_Out(ELB_GPIOs.INT_L_HIGH, GPIO_PINS.INT_L)
         pin_presentl_low    = self.__TestGPIO_ELB_Out(ELB_GPIOs.PRESENT_L_LOW, GPIO_PINS.PRESENT_L)
-        pin_presentl_high   = self.__TestGPIO_ELB_Out(ELB_GPIOs.PRESENT_L_LOW, GPIO_PINS.PRESENT_L)
+        pin_presentl_high   = self.__TestGPIO_ELB_Out(ELB_GPIOs.PRESENT_L_HIGH, GPIO_PINS.PRESENT_L)
         # -- Inputs
         pin_modsel_low  = self.__TestGPIO_ELB_In(ELB_GPIOs.MODSEL_LOW, GPIO_PINS.MODSEL)
         pin_modsel_high = self.__TestGPIO_ELB_In(ELB_GPIOs.MODSEL_HIGH, GPIO_PINS.MODSEL)
@@ -172,6 +172,8 @@ class ELB_i2c:
         pin_resetl_low  = self.__TestGPIO_ELB_In(ELB_GPIOs.RESET_L_LOW, GPIO_PINS.RESET_L)
         pin_resetl_high = self.__TestGPIO_ELB_In(ELB_GPIOs.RESET_L_HIGH, GPIO_PINS.RESET_L)
         results = [pin_intl_high, pin_intl_low, pin_presentl_low, pin_presentl_high, pin_modsel_low, pin_modsel_high, pin_lpmode_low, pin_lpmode_high, pin_resetl_low, pin_resetl_high]
+        # Configure the pins back to the expected mode
+        self.gpioctrl.config_pins_todefault()
         # no test mode
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x00])
         return results
