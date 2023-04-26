@@ -55,22 +55,23 @@ class LOG_Manager():
             self.resultsfilename = "ELB_"+self.serial+"_"+self.logfiletime+"_"+str(filecnt)+self.ext_results
         
         # create files
-        print("Event: Opening {}\n".format(self.default_path+self.logfilename))
-        print("Event: Opening {}\n".format(self.default_path+self.resultsfilename))
         try: 
             self.logfile = open(self.default_path+self.logfilename, "w")
             self.resultsfile = open(self.default_path+self.resultsfilename, "w")
+            print("Event: Opened {}\n".format(self.default_path+self.logfilename))
+            print("Event: Opened {}\n".format(self.default_path+self.resultsfilename))
             return True
         except:
+            print("ERROR: Unable to open Logfiles!")
             return False
 
     def __init_logfile(self):
-        self.logfile("Juniper Electric Loopback Test Log\n")
-        self.logfile("=====================\n")
-        self.logfile("Test Date: {}\n".format(self.logfiletime))
-        self.resultsfile("Juniper Electric Loopback TestResults\n")
-        self.logfile("Test Date,{}\n".format(self.logfiletime))
-        self.logfile("Result,Test Name,High Limit,Measurement,Low Limit\n")
+        self.logtofile("Juniper Electric Loopback Test Log\n")
+        self.logtofile("=====================\n")
+        self.logtofile("Test Date: {}\n".format(self.logfiletime))
+        self.logresult("Juniper Electric Loopback TestResults\n")
+        self.logresult("Test Date,{}\n".format(self.logfiletime))
+        self.logresult("Result,Test Name,High Limit,Measurement,Low Limit\n")
 
 
     def logtofile(self, line: str):
@@ -79,5 +80,8 @@ class LOG_Manager():
         return
 
     def logresult(self, result: str, testname:str, measurement:str, highlim: str, lowlim: str):
+        # display numeric tests in tabseparated
+        print("{}\t{}\t{}\t{}\t{}\n".format(result, testname, highlim, measurement, lowlim))
+        # log to results file in comma separated
         self.resultsfile.write("{},{},{},{},{}\n".format(result,testname,highlim,measurement,lowlim))
         pass
