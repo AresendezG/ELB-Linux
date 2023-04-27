@@ -387,10 +387,9 @@ class ELB_i2c:
                         pass
 
     def PRBS_GetData(self, modrate: MOD_Rates) -> list:
-            lol_status = []
+            lol_status = [-1] * 8
             # get prbs results
-            # write page 0x14
-            self.bus.read_i2c_block_data(self.DEV_ADD, )
+            # write page 0x14            
             self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x14])
             # diag sel input lan ber
             self.bus.write_i2c_block_data(self.DEV_ADD, 128, [0x00])
@@ -398,7 +397,7 @@ class ELB_i2c:
             self.bus.write_i2c_block_data(self.DEV_ADD, 128, [0x01])
             time.sleep(8)
             # read host chk lol
-            self.bus.read_i2c_block_data(self.DEV_ADD, 138, 1)
+            retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 138, 1)
             retdata = [x for x in retdata]
             hostchklol = retdata[0]
             print("host chk lol 0x{:2x}\n".format(hostchklol))
@@ -421,7 +420,7 @@ class ELB_i2c:
                     hostchkber[ln] = 0.0
                 else:
                     hostchkber[ln] = man * (10 ** (s-24))
-                print("Lane:\t{}\tModrate:\t{}\tBER:\t{} {} {}\tman {} s {}".format(ln,modrate,hostchkber[ln],retdata[ln*2],retdata[(ln*2)+1],man,s))
+                print("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln],retdata[ln*2],retdata[(ln*2)+1],man,s))
                 lol_status[ln] = hostchklol & (1<<ln)
             
             # write page 0x13

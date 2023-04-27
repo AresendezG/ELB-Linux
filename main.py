@@ -1,10 +1,11 @@
 from smbus2 import SMBus
 from i2c_comm import ELB_i2c
+from i2c_types import MOD_Rates
 from log_management import LOG_Manager
 
 # Change these variables for user settings
 default_path = "../test_results/"
-uut_serial = "ZP3923110080"
+uut_serial = "ZP3923110084"
 i2c_comm = ELB_i2c()
 
 try:
@@ -16,6 +17,9 @@ try:
     gpio_results = i2c_comm.Test_GPIO_all()
     for rsl in range(len(gpio_results)):
         logs.logtofile("GPIO Result: {}".format(gpio_results[rsl]))
+
+    logs.logtofile("Event: Start PRBS")
+    i2c_comm.PRBS_Start(MOD_Rates.PAM4_50G)
 
     logs.logtofile("Event: Reading UUT SN")
     [serial_str, part_number, revision] = i2c_comm.Get_UUT_SN()
@@ -50,7 +54,14 @@ try:
         logs.logtofile("VCC Sensor_{} Result: {}".format(rsl, current_results[0][rsl]))
         logs.logtofile("VCC_RX Sensor_{} Result: {}".format(rsl, current_results[1][rsl]))
         logs.logtofile("VCC_TX Sensor_{} Result: {}".format(rsl, current_results[2][rsl]))
+    
+    logs.logtofile("Event: Getting PRBS results")
+    [lol_status, hostchkber] = i2c_comm.PRBS_GetData(MOD_Rates.PAM4_50G)
+    for rsl in range(len(hostchkber)):
+        logs.logtofile("PRBS Lane-{} BER: {}".format(rsl, hostchkber[rsl]))
+        logs.logtofile("PRBS Lane-{} LOL: {}".format(rsl, lol_status[rsl]))
 
+    
 except KeyboardInterrupt:
     logs.logtofile("Warning: Test Aborted by User!")
 
