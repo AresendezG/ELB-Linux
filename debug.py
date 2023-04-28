@@ -1,8 +1,12 @@
 
-print("Debug Start: ")
-# Generic updates to the debug file! jeje
+import sys 
+args = sys.argv
+# args will take as 1 the 1st 
+if (len(args) > 1):
+    print("Arguments:")
+    print(args)
+else:
+    print("Script with no arguments given")
 
-for ln in range(0):
-    print("Doing something?")
-    print(ln)
-print("Debug End")
+
+# Generic updates to the debug file! jeje
