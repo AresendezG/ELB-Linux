@@ -1,0 +1,9 @@
+<sequence name="Default_Seq" version="1.0">
+    <!--Define the order of execution by moving the steps-->
+    <step name="volt_sensors">
+        <config retries="2" flow="cont"/>
+    </step>
+    <step name="curr_sensors">
+        <config retries="2" flow="cont"/>
+    </step>
+</sequence>

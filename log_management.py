@@ -27,6 +27,7 @@ class LOG_Manager():
         
     
     def __del__(self):
+        print("Mesaage:\tClosing Logfiles")
         self.logfile.close()
         self.resultsfile.close()
         pass
