@@ -33,7 +33,7 @@ class ProgramControl:
     def __StartLog(self) -> None:
         try:
             # Start Logfile
-            self.logger = LOG_Manager(self.sn, "c:\\Tmp\\TestLog")
+            self.logger = LOG_Manager(self.sn, "c:\\Tmp\\TestLog\\")
         except:
             print("ERROR:\tUnable to Start the Logfile. Verify settings")    
 
@@ -54,28 +54,31 @@ class ProgramControl:
             self.test_flow = xml_handler.ReadSeq_Settings(self.seq_file)
             self.test_count = xml_handler.test_count
         except:
-            self.logger("ERROR:\tUnable to read the sequence XML Config File")
+            self.logger.logtofile("ERROR:\tUnable to read the sequence XML Config File")
 
-    def __RunTest(self, test_fnc, retries:int):
+    def __RunTest(self, test_fnc:object, retries:int):
         
         for i in range(retries):
             results = test_fnc()
         pass
     
     def run_program(self):
-        print("Event:\tTesting Start Start")
-        executed = 0
-        # pending = self.test_count
-        for test in self.test_flow:
-            if  test['name'] == "voltage":
-                self.logger("Event:\tExecuting Voltage Test")
-                self.__RunTest(self.i2c_comm.voltagefnc(), 2)
+        
+        print("Event:\tFirmware Prog & Verify")
                 
-            elif test['name'] == "current":
-                self.logger("Event:\tExecuting Current test")
-                self.__RunTest(self.i2c_comm.currentfnc(), 2)
-            else:
-                self.logger("Event:\tUndefined test found")
-
+        print("Event:\tTest Start")
+        executed = 0
+        # For each test in the TestFlow 
+        for test in self.test_flow:
+            # Read the testname from the xml config
+            test_name = test['test_name']
+            retries = int(test['retries'])
+            # get a reference of the test     
+            try:
+                test_fnc_ref = getattr(self.i2c_comm, test_name)
+                self.__RunTest(test_fnc_ref, retries) 
+            except AttributeError:
+                print("ERROR:\t Unable to find a test named{}".format(test_name))
+                self.logger.logtofile("ERROR:\tTest {} Not Found".format(test_name))
 
         return

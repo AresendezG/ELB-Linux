@@ -14,10 +14,14 @@ class DummyClass:
         print("Event:\tCreating a dummy class! jejeje")
         pass
 
-    def voltagefnc(self) -> list:
-        print("Test:\tYoure executing voltage fnc")
+    def temp_sensors(self) -> list:
+        print("Test:\tExecuting TempSensors Test")
         return [1, 2, 3, 4]
     
-    def currentfnc(self) -> list:
-        print("Test:\tYou're executing a current fnc")
+    def ins_count(self) -> list:
+        print("Executing ins Count Test")
+        return [0, 10]
+
+    def power_loads(self) -> list:
+        print("Test:\tExecuting PowerLoad Test")
         return [0.2, 0.3, 0.5]

@@ -23,10 +23,10 @@ class ELB_i2c:
     def __init__(self) -> None:
         print("***\tInitialize SMBus\t***")
         self.bus = SMBus(self.DEVICE_BUS)
-        print("Event: i2c BUS Communication with host at address: {}".format(self.DEV_ADD))
+        print("Event:\ti2c Communication with host at address: {}".format(self.DEV_ADD))
         # Start object to handle RPI GPIOs
         self.gpioctrl = GPIO_CONTROL()
-        print("Event: GPIO Control Started")
+        print("Event:\tGPIO Control Started")
         pass
     
     # Function to test the temperature 
@@ -129,7 +129,7 @@ class ELB_i2c:
     # ------ Sequences ---------------
 
     def GetFW_Version(self) -> list:
-        print("***\tRetrieve FW Version\t***")
+        print("***\tGet UUT FW Version\t***")
         # Write Page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])        
         # Retrieve data from registers
@@ -148,13 +148,13 @@ class ELB_i2c:
         print("DSP ID: ",dsp_id)
         print("DSP Rev: ",dsp_rev)
         print("FW Version: {}.{}".format(fwver[0], fwver[1]))
-        return [dsp_ver, dsp_id, dsp_rev, fwver]
+        fwver_str = "{}.{}".format(fwver[0], fwver[1])
+        return [dsp_ver, dsp_id, dsp_rev, fwver_str]
 
 
     # Full GPIO Sequence
     def Test_GPIO_all(self) -> list: #returns an array of the GPIO test results
         print("***\tGPIO Test\t***")
-
         # Write Page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])     
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x01])
@@ -190,7 +190,7 @@ class ELB_i2c:
         time.sleep(5)
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
 
-    def Get_AllVoltages(self) -> list:
+    def Get_Voltage_Sensors(self) -> list:
         print("***\tVoltage Sensor Reading\t***")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
@@ -204,7 +204,7 @@ class ELB_i2c:
         print("Reading VBATT Voltage: {:.4f}".format(vbatt))
         return [vcc, vcctx, vccrx, vbatt]
 
-    def Get_AllTemps(self) -> list:
+    def Get_Temp_Sensors(self) -> list:
         print("***\tTempSensor Reading\t***")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
@@ -223,7 +223,7 @@ class ELB_i2c:
         return [uc_temp, rt_temp, pcb_rt_temp, pcb_pl_temp, shell_f_temp, shell_r_temp]  
     
 
-    def Get_Alll_EPPSData(self) -> list:
+    def Get_ePPS_Data(self) -> list:
         print("***\tGetting ePPS Data\t***")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
@@ -272,7 +272,7 @@ class ELB_i2c:
         ins_nibb = retdata[0]
         return [ins_accum, ins_nibb]
 
-    def PRBS_Start(self, modrate: MOD_Rates): 
+    def PRBS_Start(self, modrate: MOD_Rates) -> list: 
         # start prbs!!!!!!!!!!!!!!!!!!!!
         # write page 0x10
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x10])
@@ -320,124 +320,60 @@ class ELB_i2c:
         retdata = [x for x in retdata]
         hostchklol = retdata[0]
         print("host chk lol 0x{:2x}\n".format(hostchklol))
-        eqlns = [[6,0,3],[6,0,3],[6,0,3],[6,0,3],[6,0,3],[6,0,3],[6,0,3],[6,0,3]]
-        # for pre in range(8):
-        for pre in range(0):
-            for pst in range(8):
-                for amp in range(4):
-                    if hostchklol != 0:
-                        for ln in range(8):
-                            if hostchklol & (1<<ln):
-                               # set eq on lol lns
-                               eqlns[ln] = [pre,pst,amp]
-                            # write page 0x10
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x10])
-                            # set working eqs
-                            for lns2 in range(4):
-                                # set pre
-                                self.bus.write_i2c_block_data(self.DEV_ADD, 162+lns2, [eqlns[lns2*2][0]+(eqlns[lns2*2+1][0]<<4)])
-                                # set post
-                                self.bus.write_i2c_block_data(self.DEV_ADD, 166+lns2, [eqlns[lns2*2][1]+(eqlns[lns2*2+1][1]<<4)])
-                                # set amp
-                                self.bus.write_i2c_block_data(self.DEV_ADD, 170+lns2, [eqlns[lns2*2][2]+(eqlns[lns2*2+1][2]<<4)])
-                            # config
-                            # config lanes 25G nrz
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 145, [0xb1, 0xb1, 0xb1, 0xb1, 0xb9, 0xb9, 0xb9, 0xb9])
-                            # enable cfg
-                            retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 144, 1)
-                            retdata = [x for x in retdata]
-                            if retdata[0] != 0:
-                                print("ERROR: app imm not 0!!!!!!")
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0xff])
-                            time.sleep(5)
-                            # disable lpbks
-                            # write page 0x13
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 180, [0, 0, 0, 0])
-                            # config host side gen
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0, 0, 0, 0])
-                            # config host side gen prbs31
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 148, [0x11, 0x11, 0x11, 0x11])            
-                            # enable host side gen
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0xff])
-                            # config host side chk
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0, 0, 0, 0])
-                            # config host side chk prbs7
-                            #self.bus.write_i2c_block_data(self.DEV_ADD, [164, 0xbb, 0xbb, 0xbb, 0xbb])
-                            # config host side chk prbs31
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 164, [0x11, 0x11, 0x11, 0x11])                            
-                            # enable host side chk
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0xff])
-                            time.sleep(5)
-                            # write page 0x14
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x14])
-                            # diag sel input lan ber
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 128, [0x00])
-                            time.sleep(1)
-                            self.bus.write_i2c_block_data(self.DEV_ADD, 128, [0x01])
-                            time.sleep(3)
-                            # read host chk lol
-                            retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 138, 1)
-                            retdata = [x for x in retdata]
-                            hostchklol = retdata[0]
-                            print("host chk lol 0x{:2x} pre {} post {} amp {}\n".format(self.hostchklol,pre,pst,amp))
+        return [None]
 
-                    else:
-                    # no lanes lol
-                        pass
 
     def PRBS_GetData(self, modrate: MOD_Rates) -> list:
-            lol_status = [-1] * 8
-            # get prbs results
-            # write page 0x14            
-            self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x14])
-            # diag sel input lan ber
-            self.bus.write_i2c_block_data(self.DEV_ADD, 128, [0x00])
-            time.sleep(1)
-            self.bus.write_i2c_block_data(self.DEV_ADD, 128, [0x01])
-            time.sleep(8)
-            # read host chk lol
-            retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 138, 1)
-            retdata = [x for x in retdata]
-            hostchklol = retdata[0]
-            print("host chk lol 0x{:2x}\n".format(hostchklol))
-            # read host chk prbs
-            hostchkber = [0.0] * 8
-            retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 192, 16)
-            retdata = [x for x in retdata]
-            # write page 0x13
-            self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
-            # disable host side gen
-            self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
-            # disable host side chk
-            self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
-            for ln in range(8):
-                u16 = (retdata[ln*2] << 8) | retdata[(ln*2)+1]
-                s = (u16 & 0xf800)>>11
-                man = u16 & 0x07ff
-                # hostchkber is an array that holds the Bit error rate
-                if man == 0:
-                    hostchkber[ln] = 0.0
-                else:
-                    hostchkber[ln] = man * (10 ** (s-24))
-                print("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln],retdata[ln*2],retdata[(ln*2)+1],man,s))
-                lol_status[ln] = hostchklol & (1<<ln)
+        lol_status = [-1] * 8
+        # get prbs results
+        # write page 0x14            
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x14])
+        # diag sel input lan ber
+        self.bus.write_i2c_block_data(self.DEV_ADD, 128, [0x00])
+        time.sleep(1)
+        self.bus.write_i2c_block_data(self.DEV_ADD, 128, [0x01])
+        time.sleep(8)
+        # read host chk lol
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 138, 1)
+        retdata = [x for x in retdata]
+        hostchklol = retdata[0]
+        print("host chk lol 0x{:2x}\n".format(hostchklol))
+        # read host chk prbs
+        hostchkber = [0.0] * 8
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 192, 16)
+        retdata = [x for x in retdata]
+         # write page 0x13
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
+        # disable host side gen
+        self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
+        # disable host side chk
+        self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
+        for ln in range(8):
+            u16 = (retdata[ln*2] << 8) | retdata[(ln*2)+1]
+            s = (u16 & 0xf800)>>11
+            man = u16 & 0x07ff
+            # hostchkber is an array that holds the Bit error rate
+            if man == 0:
+                hostchkber[ln] = 0.0
+            else:
+                hostchkber[ln] = man * (10 ** (s-24))
+            print("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln],retdata[ln*2],retdata[(ln*2)+1],man,s))
+            lol_status[ln] = hostchklol & (1<<ln)
             
-            # write page 0x13
-            self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
-            # disable host side gen
-            self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
-            # disable host side chk
-            self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
-        
-            return [lol_status, hostchkber]
+        # write page 0x13
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
+        # disable host side gen
+        self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
+        # disable host side chk
+        self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
+        return [lol_status, hostchkber]
 
     def CurrentSequence(self) -> list:
         print("***\tCurrent Sensors\t***")
         # load/current all on/off
         # all loads off
         # put in low power mode
-        print("**Power Load OFF and LowPower Settings**")
+        print("***\tPower Load OFF and LowPower Settings**")
         self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x30])
         self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
         time.sleep(5)

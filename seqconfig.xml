@@ -1,9 +1,33 @@
 <sequence name="Default_Seq" version="1.0">
     <!--Define the order of execution by moving the steps-->
+    <step name="verify_uut_sn">
+        <config retries="2" flow="cont"/>
+    </step>
+    <step name="uut_fw_version">
+        <config retries="1" flow="cont"/>
+    </step>
+    <step name="ins_count">
+        <config retries="1" flow="cont"/>
+    </step>
     <step name="volt_sensors">
         <config retries="2" flow="cont"/>
     </step>
-    <step name="curr_sensors">
+    <step name="prbs_start">
+        <config retries="2" flow="cont"/>
+    </step>
+    <step name="temp_sensors">
+        <config retries="2" flow="cont"/>
+    </step>
+    <step name="epps">
+        <config retries="2" flow="cont"/>
+    </step>
+    <step name="power_loads">
+        <config retries="2" flow="cont"/>
+    </step>
+    <step name="prbs_verify">
+        <config retries="2" flow="cont"/>
+    </step>
+    <step name="temp_sensors">
         <config retries="2" flow="cont"/>
     </step>
 </sequence>
