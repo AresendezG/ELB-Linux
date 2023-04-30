@@ -98,8 +98,8 @@ class ELB_i2c:
             # truncate
             serial = serial[0:16]
         # Convert from string to 
-        self.snlst = [166]+[ord(x) for x in self.snwr]
-        self.bus.write_i2c_block_data(self.DEV_ADD, self.snlst)
+        serial_list = [ord(x) for x in serial]
+        self.bus.write_i2c_block_data(self.DEV_ADD, 166, serial_list)
         self.pnwr = self.testpn
         if len(self.testpn)<16:
             # pad with spaces
