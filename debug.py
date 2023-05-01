@@ -1,4 +1,3 @@
-
 import sys 
 import xml
 from Sequencer import SeqConfig
@@ -7,6 +6,7 @@ import time
 #from i2c_comm import ELB_i2c
 #from i2c_types import MOD_Rates
 from log_management import LOG_Manager
+from firmware import ELBFirmware
 
 
 class DummyClass:
@@ -40,6 +40,15 @@ class i2c_PicoInterface:
         # self.i2cbus.write_i2c_block_data(self.pico_address, 0xff, [0])
         self.i2cbus.close()
         print("Closed i2c Bus")
+
+    def validate_firmware(self) -> bool:
+        print("Event:\tClosing i2c Bus")
+        self.i2cbus.close()
+        fwupgrader = ELBFirmware("settings.json")
+        [fw_version, retimer] = fwupgrader.fw_verification()
+        print("FW Version: {}".format(fw_version))
+        print("Retimer hostcheck: {}".format(retimer))
+        self.i2cbus.open(self.RPI_BUS)
 
     def read_sn(self) -> str:        
         print("Event:\tTrying to read Pico SN")

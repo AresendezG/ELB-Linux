@@ -1,0 +1,6 @@
+{
+    "expected_fw": "0.5",
+    "fw_file": "/tmp/elb/fw/i2c_comm_v05.hex",
+    "i2c_default_add": 23, 
+    "log_path": "/tmp/elb/logs/"
+}
