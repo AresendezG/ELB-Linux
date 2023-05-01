@@ -19,7 +19,7 @@ class SeqConfig:
         tests = []
   
         # iterate news items
-        print("Step count: {}".format(root.findall("step")))
+        print("Event:\tSteps Count in Sequence: {}".format(len(root.findall("step"))))
         for item in root.findall('step'):
             # empty test_step
             test_step = {}

@@ -82,7 +82,7 @@ class ProgramControl:
         fwhandler = ELBFirmware(self.config_file)
         # Verify the firmware version and try to upgrade it
         [fw_ver, retimer] = fwhandler.fw_verification()
-        self.logger.logtofile("FW Version Before: {}".format(fwhandler.current_fw))
+        self.logger.logtofile("FW Version Before: {}".format(fwhandler.old_fw))
         self.logger.logtofile("FW Version After Upgrade: {}".format(fw_ver))
         self.logger.logtofile("Retimer HostAddress: {}".format(retimer))
 
@@ -112,3 +112,10 @@ class ProgramControl:
                 self.logger.logtofile("ERROR:\tTest {} Not Found".format(test_name))
 
         return
+
+
+class ResultsProcess:
+    def __init__(self) -> None:
+        pass
+
+    

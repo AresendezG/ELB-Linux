@@ -70,7 +70,8 @@ class ELBFirmware:
         print("Event:\tFirmware Version before Upgrade: {}".format(fw_str))
         return [fw_str, retimer]
     
-    def fw_upgrade(self) -> list:
+    # Requires the settings file to determine the filename of the FW to upgrade
+    def __fw_upgrade(self) -> list:
         # OpenOCD Command example (pending to change the interface)
         '''
         openocd -f interface/raspberrypi-swd.cfg -f target/rp2040.cfg -c "program i2c_comm.hex verify reset exit"
@@ -98,13 +99,12 @@ class ELBFirmware:
 
     def fw_verification(self) -> list:
         [fw_str, retimer] = self.__get_current_fw()
-        
+        self.old_fw = fw_str
         if (fw_str != self.expected_fw):
-            self.old_fw = fw_str
             # FW Missmatch, trying to upgrade
             self.i2cbus.close()
             # Try to upgrade the firmware via OpenOCD and SWD Protocol
-            [prog, verify, reset] = self.fw_upgrade()
+            [prog, verify, reset] = self.__fw_upgrade()
             if (prog and verify):
                 time.sleep(1)
                 # Try to reach the uC again via i2c
