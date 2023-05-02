@@ -1,0 +1,37 @@
+{
+    "voltages": 
+    {
+        "vcc":
+        {
+            "test_name": "VCC",
+            "low_limit": 2.9,
+            "high_limit": 3.4,
+            "unit": "v",
+            "report":true
+        },
+        "vcc_tx":
+        {
+            "test_name": "VCC_TX",
+            "low_limit": 2.9,
+            "high_limit": 3.4,
+            "unit": "v",
+            "report":true
+        },
+        "vcc_rx":
+        {
+            "test_name": "VCC_RX",
+            "low_limit": 2.9,
+            "high_limit": 3.4,
+            "unit": "v",
+            "report":true
+        },
+        "vbatt":
+        {
+            "test_name": "VBATT",
+            "low_limit": 2.9,
+            "high_limit": 3.4,
+            "unit": "v",
+            "report":true
+        }
+    }
+}
