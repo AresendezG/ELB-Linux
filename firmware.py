@@ -74,8 +74,12 @@ class ELBFirmware:
     def __fw_upgrade(self) -> list:
         # OpenOCD Command example (pending to change the interface)
         '''
+        # Program a RPI Pico
         openocd -f interface/raspberrypi-swd.cfg -f target/rp2040.cfg -c "program i2c_comm.hex verify reset exit"
-
+        # Read fw from the ELB
+        openocd -f interface/raspberrypi-swd.cfg -f target/cy8c6347bzi-bld33.cfg -c init -c "reset halt" -c "flash read_bank 0 firmwareF1.bin 0 0x10000" -c "reset" -c shutdown
+        # Program fw on the ELB
+        openocd -f interface/raspberrypi-swd.cfg -f target/cy8c6347bzi-bld33.cfg -c init -c "reset halt" -c "program i2c_comm.hex verify reset exit"
         '''
         # Define the OpenOCD command to run
         cmd = 'openocd -f interface/raspberrypi-swd.cfg -f target/rp2040.cfg -c "program {} verify reset exit"'.format(self.fw_file)
