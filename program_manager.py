@@ -4,6 +4,7 @@ from log_management import LOG_Manager
 from Sequencer import SeqConfig
 from firmware import ELBFirmware
 from i2c_comm import ELB_i2c
+from results_processing import ResultsManager
 
 # This class will define how the program flows
 
@@ -29,6 +30,8 @@ class ProgramControl:
         self.__Read_FlowConfig()
         # Firmware not ready yet!
         #self.__Verify_Firmware()
+        # Launch the results processing object
+        self.results_mgr = ResultsManager(self.limits_file)
         pass
     
     # Cleanup
@@ -87,10 +90,11 @@ class ProgramControl:
         self.logger.logtofile("FW Version After Upgrade: {}".format(fw_ver))
         self.logger.logtofile("Retimer HostAddress: {}".format(retimer))
 
-    def __RunTest(self, test_fnc:object, retries:int):
+    def __RunTest(self, test_fnc:object, retries:int, test_name:str):
         
         for i in range(retries):
             results = test_fnc()
+            self.results_mgr.ProcessResults(test_name, results)
         pass
     
     def run_program(self):
@@ -107,7 +111,7 @@ class ProgramControl:
             # get a reference of the test     
             try:
                 test_fnc_ref = getattr(self.i2c_comm, test_name)
-                self.__RunTest(test_fnc_ref, retries) 
+                results = self.__RunTest(test_fnc_ref, retries, test_name) 
             except AttributeError:
                 #print("ERROR:\t Unable to find Test: {}".format(test_name))
                 self.logger.logtofile("ERROR:\tTest {} Not Found".format(test_name))

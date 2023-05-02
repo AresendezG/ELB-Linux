@@ -1,5 +1,5 @@
 {
-    "voltages": 
+    "volt_sensors": 
     {
         "vcc":
         {
@@ -33,5 +33,60 @@
             "unit": "v",
             "report":true
         }
+    },
+
+    "temp_sensors": 
+    {
+        "uc_temp":
+        {
+            "test_name": "TEMP uC",
+            "low_limit": 0,
+            "high_limit": 100,
+            "unit": "c",
+            "report":true
+        },
+        "retimer_temp":
+        {
+            "test_name": "TEMP RTMR",
+            "low_limit": 0,
+            "high_limit": 100,
+            "unit": "c",
+            "report":true
+        },
+        "pcb_rt":
+        {
+            "test_name": "TEMP PCB RTMR",
+            "low_limit": 0,
+            "high_limit": 100,
+            "unit": "c",
+            "report":true
+        },
+        "pcb_pl":
+        {
+            "test_name": "TEMP PCB PL",
+            "low_limit": 0,
+            "high_limit": 100,
+            "unit": "c",
+            "report":true
+        }, 
+        "shell_f":
+        {
+            "test_name": "TEMP SHELL F",
+            "low_limit": 0,
+            "high_limit": 100,
+            "unit": "c",
+            "report":true
+        }, 
+        "shell_r":
+        {
+            "test_name": "TEMP SHELL R",
+            "low_limit": 0,
+            "high_limit": 100,
+            "unit": "c",
+            "report":true
+        } 
     }
+
+
+
 }
