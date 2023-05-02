@@ -3,7 +3,7 @@ import json
 from log_management import LOG_Manager
 from Sequencer import SeqConfig
 from firmware import ELBFirmware
-from debug import DummyClass
+from i2c_comm import ELB_i2c
 
 # This class will define how the program flows
 
@@ -19,15 +19,16 @@ class ProgramControl:
     # Define the stuff that needs to happen for this prog runs 
     def __init__(self, args) -> None:
         print("Message:\tStart Program Execution")
-        self.i2c_comm = DummyClass()
+        #self.i2c_comm = DummyClass()
+        self.i2c_comm = ELB_i2c()
         self.input_args = args
         self.__ValidateArgs()
         self.__StartLog()
         # por hacer:
         # Launch the i2c Comm and the GPIO manager?
         self.__Read_FlowConfig()
-        self.__Verify_Firmware()
-        #self.test_config = 
+        # Firmware not ready yet!
+        #self.__Verify_Firmware()
         pass
     
     # Cleanup

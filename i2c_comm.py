@@ -128,7 +128,7 @@ class ELB_i2c:
 
     # ------ Sequences ---------------
 
-    def GetFW_Version(self) -> list:
+    def uut_fw_version(self) -> list:
         print("***\tGet UUT FW Version\t***")
         # Write Page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])        
@@ -178,7 +178,7 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x00])
         return results
 
-    def TestLED_Sequence(self):
+    def leds_verification(self):
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # flash LEDs
@@ -188,9 +188,9 @@ class ELB_i2c:
         time.sleep(5)
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.RED_ON)
         time.sleep(5)
-        self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
+        #self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
 
-    def Get_Voltage_Sensors(self) -> list:
+    def volt_sensors(self) -> list:
         print("***\tVoltage Sensor Reading\t***")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
@@ -202,9 +202,9 @@ class ELB_i2c:
         print("Reading VCC_RX Voltage: {:.4f}".format(vccrx))
         vbatt = self.__ReadVoltageFnc(VoltageSensors.VBATT)
         print("Reading VBATT Voltage: {:.4f}".format(vbatt))
-        return [vcc, vcctx, vccrx, vbatt]
+        return [["VCC",vcc], ["vcc_tx",vcctx], ["vcc_rx",vccrx], ["vbatt",vbatt]]
 
-    def Get_Temp_Sensors(self) -> list:
+    def temp_sensors(self) -> list:
         print("***\tTempSensor Reading\t***")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
@@ -220,7 +220,7 @@ class ELB_i2c:
         print("Temp Shell F {:.4f}".format(shell_f_temp))       
         shell_r_temp = self.__ReadTempFnc(TempSensors.SHELL_R)
         print("Temp Shell F {:.4f}".format(shell_r_temp))
-        return [uc_temp, rt_temp, pcb_rt_temp, pcb_pl_temp, shell_f_temp, shell_r_temp]  
+        return [["uc_temp",uc_temp], ["retimer_temp",rt_temp], ["pcb_rt",pcb_rt_temp], ["pcb_pl",pcb_pl_temp], ["shell_f",shell_f_temp], ["shell_r",shell_r_temp]]  
     
 
     def Get_ePPS_Data(self) -> list:
@@ -240,7 +240,7 @@ class ELB_i2c:
         duty_ms = self.__ReadEPPS_Data(162, 2)
         return [freq, duty_percent, duty_ms]
 
-    def Get_UUT_SN(self) -> list:
+    def uut_serial_num(self) -> list:
         print("***\tGet Serial Number\t***")
         # write page 0
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
@@ -256,9 +256,9 @@ class ELB_i2c:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
         revision = [x for x in retdata] # array that holds the rev number
         print("Serial Number: "+serial_str)
-        return [serial_str, part_number, revision]
+        return [["serial",serial_str], ["",part_number], ["rev",revision]]
     
-    def Get_InsertionCount(self) -> list:
+    def ins_count(self) -> list:
         print("***\tInsertion Counter\t***")
         # Read the insertion counter
         # write page 0x03
@@ -270,7 +270,7 @@ class ELB_i2c:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 131, 1)
         retdata = [x for x in retdata]
         ins_nibb = retdata[0]
-        return [ins_accum, ins_nibb]
+        return [["ins_accum",ins_accum], ["ins_nible",ins_nibb]]
 
     def PRBS_Start(self, modrate: MOD_Rates) -> list: 
         # start prbs!!!!!!!!!!!!!!!!!!!!
@@ -323,7 +323,7 @@ class ELB_i2c:
         return [None]
 
 
-    def PRBS_GetData(self, modrate: MOD_Rates) -> list:
+    def prbs_results(self, modrate: MOD_Rates) -> list:
         lol_status = [-1] * 8
         # get prbs results
         # write page 0x14            

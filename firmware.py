@@ -76,10 +76,10 @@ class ELBFirmware:
         '''
         # Program a RPI Pico
         openocd -f interface/raspberrypi-swd.cfg -f target/rp2040.cfg -c "program i2c_comm.hex verify reset exit"
-        # Read fw from the ELB
-        openocd -f interface/raspberrypi-swd.cfg -f target/cy8c6347bzi-bld33.cfg -c init -c "reset halt" -c "flash read_bank 0 firmwareF1.bin 0 0x10000" -c "reset" -c shutdown
+        # Dump Flash from the ELB
+        openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset halt" -c "flash read_bank 0 Firmware_Dump_full.hex 0 0x100000" -c "reset" -c shutdown
         # Program fw on the ELB
-        openocd -f interface/raspberrypi-swd.cfg -f target/cy8c6347bzi-bld33.cfg -c init -c "reset halt" -c "program i2c_comm.hex verify reset exit"
+        openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset halt" -c "program Balerion_FWRelease69_ID.hex verify reset exit"
         '''
         # Define the OpenOCD command to run
         cmd = 'openocd -f interface/raspberrypi-swd.cfg -f target/rp2040.cfg -c "program {} verify reset exit"'.format(self.fw_file)

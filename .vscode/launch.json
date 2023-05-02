@@ -9,7 +9,7 @@
          "type":"python",
       "request":"launch",
       "program":"${file}",
-         "args":["SERIALNUM", "seqconfig.xml", "limits.json", "settings.json"],
+         "args":["ZP3923110076", "seqconfig.xml", "limits.json", "settings.json"],
       "console":"integratedTerminal",
    "justMyCode":true
     },
