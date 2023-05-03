@@ -87,9 +87,10 @@ class LOG_Manager():
         self.logfile.write(line + "\n") # Append new Line
         return
 
-    def logresult(self, result: str, testname:str, measurement:str, highlim: str, lowlim: str):
+    def logresult(self, testindex:int, result: str, testname:str, measurement:str, highlim: str, lowlim: str):
         # display numeric tests in tabseparated
-        print("{}\t{}\t{}\t{}\t{}\n".format(result, testname, highlim, measurement, lowlim))
+        str_to_log = "{}\t{}\t{}\t{}\t{}\t{}\n".format(testindex, result, testname, highlim, measurement, lowlim)
+        print(str_to_log)
         # log to results file in comma separated
-        self.resultsfile.write("{},{},{},{},{}\n".format(result,testname,highlim,measurement,lowlim))
+        self.resultsfile.write(str_to_log)
         pass

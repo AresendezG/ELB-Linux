@@ -5,6 +5,7 @@ from Sequencer import SeqConfig
 from firmware import ELBFirmware
 from i2c_comm import ELB_i2c
 from results_processing import ResultsManager
+from i2c_types import MOD_Rates
 
 # This class will define how the program flows
 
@@ -14,14 +15,14 @@ class ProgramControl:
     seq_file = ""
     limits_file = ""
     test_settings = None
+    # Object to handle the log to files
     logger = None
+    # Object to handle the i2c communication with UUT
     i2c_comm = None
 
     # Define the stuff that needs to happen for this prog runs 
     def __init__(self, args) -> None:
-        print("Message:\tStart Program Execution")
-        #self.i2c_comm = DummyClass()
-        self.i2c_comm = ELB_i2c()
+        print("Message: \tInit Test Program")
         self.input_args = args
         self.__ValidateArgs()
         self.__StartLog()
@@ -30,39 +31,45 @@ class ProgramControl:
         self.__Read_FlowConfig()
         # Firmware not ready yet!
         #self.__Verify_Firmware()
-        # Launch the results processing object
-        self.results_mgr = ResultsManager(self.limits_file)
+        # Launch the results processing object with a reference to the logger object
+        self.results_mgr = ResultsManager(self.limits_file, self.logger)
+
         pass
     
-    # Cleanup
-    def __delete__(self) -> None:
-        pass
-
     def __StartLog(self) -> None:
         try:
             # Start Logfile
             self.logger = LOG_Manager(self.sn, self.log_path)
         except:
-            print("ERROR:\tUnable to Start the Logfile. Verify settings")    
+            print("ERROR: \tUnable to Start the Logfile. Verify settings")    
 
     def __ValidateArgs(self):
         
         if (len(self.input_args) < 5):
-            print("ERROR:\tWrong Parameter Settings")
-            print("Message:\tTo run this program you need 4 parameters")
+            print("ERROR: \tWrong Parameter Settings")
+            print("Message: \tTo run this program you need at least 6 parameters")
+            raise FileExistsError
         else:
-                self.sn = self.input_args[1]
-                self.seq_file = self.input_args[2]
-                self.limits_file = self.input_args[3]
-                self.config_file = self.input_args[4]
-                self.__Read_Settings()
+            # Define all of the input parameters
+            self.sn = self.input_args[1]
+            self.rev = self.input_args[2]
+            self.partnum = self.input_args[3]
+            self.seq_file = self.input_args[4]
+            self.limits_file = self.input_args[5]
+            self.config_file = self.input_args[6]
+            # Read the settings from the Json file
+            self.__Read_Settings()
         return
     
-
+    # Reading the test settings from the settings.json file
     def __Read_Settings(self):
         if (os.path.isfile(self.config_file)):
             with open(self.config_file, 'r') as f:
                 settings = json.load(f)
+            # Define Mod rate for PRBS
+            self.prbs_modrate = getattr(MOD_Rates, settings['modrate'])
+            # Define i2c address of the UUT
+            self.i2c_address = settings['i2c_default_add']
         else:
             print("ERROR:\tConfiguration File does not exist")
             raise FileNotFoundError
@@ -73,7 +80,8 @@ class ProgramControl:
         except:
             print("ERROR:\tWrong Configuration settings")
             raise FileExistsError
-
+    
+    # Reading the flow-control from the seqconfig.xml file 
     def __Read_FlowConfig(self):
         try:
             xml_handler = SeqConfig()
@@ -81,15 +89,28 @@ class ProgramControl:
             self.test_count = xml_handler.test_count
         except:
             self.logger.logtofile("ERROR:\tUnable to read the sequence XML Config File")
-
-    def __Verify_Firmware(self):
+    
+    # Fnc to handle the firmware upgrade of the UUT
+    def __FirmwareUpgrade(self):
         fwhandler = ELBFirmware(self.config_file)
         # Verify the firmware version and try to upgrade it
         [fw_ver, retimer] = fwhandler.fw_verification()
         self.logger.logtofile("FW Version Before: {}".format(fwhandler.old_fw))
         self.logger.logtofile("FW Version After Upgrade: {}".format(fw_ver))
         self.logger.logtofile("Retimer HostAddress: {}".format(retimer))
-
+    
+    def __Program_UUT_SN(self):
+        print("Event: \tSerial Number Programming")
+        # Read the old SN (if any)
+        old_uut_data = self.i2c_comm.uut_serial_num()
+        old_sn_str:str
+        old_sn_str = old_uut_data[0][1]
+        # Data in the SN register is Juniper format, thus this is a re-test
+        if (old_sn_str[0:2] == "ZP"):
+            self.logger.logtofile("Warning: \tUUT has a valid SN Programmed")
+            self.logger.logtofile("Old UUT SN: {}".format(old_sn_str))
+        self.i2c_comm.write_uut_sn(self.sn, self.partnum, self.rev)
+    
     def __RunTest(self, test_fnc:object, retries:int, test_name:str):
         
         for i in range(retries):
@@ -99,9 +120,13 @@ class ProgramControl:
     
     def run_program(self):
         
-        print("Event:\tFirmware Prog & Verify")
-                
-        print("Event:\tTest Start")
+        # Firmware Upgrade and SN Programming will execute first
+        print("Event: \tFirmware Programming")
+        self.__FirmwareUpgrade()
+        # Firmware Upgrade completed or Not required, launch i2c Communication
+        self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address)
+        self.__Program_UUT_SN()   
+        print("Event: \tTest Start")
         executed = 0
         # For each test in the TestFlow 
         for test in self.test_flow:
@@ -117,10 +142,5 @@ class ProgramControl:
                 self.logger.logtofile("ERROR:\tTest {} Not Found".format(test_name))
 
         return
-
-
-class ResultsProcess:
-    def __init__(self) -> None:
-        pass
 
     

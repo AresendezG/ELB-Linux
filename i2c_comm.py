@@ -20,13 +20,17 @@ class ELB_i2c:
     
     #function declaration
 
-    def __init__(self) -> None:
-        print("***\tInitialize SMBus\t***")
+    def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int) -> None:
+        print("Event:\tInitialize SMBus")
         self.bus = SMBus(self.DEVICE_BUS)
         print("Event:\ti2c Communication with host at address: {}".format(self.DEV_ADD))
         # Start object to handle RPI GPIOs
         self.gpioctrl = GPIO_CONTROL()
         print("Event:\tGPIO Control Started")
+        # Define the PRBS Mod Rate from the program manager as it is a setting
+        self.prbs_modrate = prbs_modrate 
+        # Define i2c address from the program manager 
+        self.DEV_ADD = i2c_add
         pass
     
     # Function to test the temperature 
@@ -84,46 +88,53 @@ class ELB_i2c:
         gpio_status = retdata[0]&elb_pin[1]
         return gpio_status
     
-    def __WriteELB_SN(self, serial: str):
-        print("***\tWriting SN to ELB\t***")
+    def write_uut_sn(self, serial: str, part_number: str, rev: str):
+        print("Event:\tWriting SN to ELB")
         # write password
         self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 16, 17])
         # write page 0
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0]) 
-        # write serial # 16 bytes
+    
+        # Format serial string to 16 bytes
         if len(serial)<16:
             # pad the serial number up to 16 chars with empty spaces if needed
             serial = serial+"".join(" " for x in range(16-len(serial)))
         elif len(serial)>16:
             # truncate
             serial = serial[0:16]
-        # Convert from string to 
+        # Convert from string to list of hex bytes
         serial_list = [ord(x) for x in serial]
         self.bus.write_i2c_block_data(self.DEV_ADD, 166, serial_list)
-        self.pnwr = self.testpn
-        if len(self.testpn)<16:
+        
+        # Format Part Number string to 16 bytes
+        if len(part_number)<16:
             # pad with spaces
-            self.pnwr = self.testpn+"".join(" " for x in range(16-len(self.testpn)))
-        elif len(self.testpn)>16:
+            part_number = part_number+"".join(" " for x in range(16-len(part_number)))
+        elif len(part_number)>16:
             # truncate
-            self.pnwr = self.testpn[0:16]
-        self.pnlst = [148]+[ord(x) for x in self.pnwr]
-        self.bus.write_i2c_block_data(self.DEV_ADD, self.pnlst) 
-        self.revwr = self.testrev
-        if len(self.testrev)<2:
+            part_number = part_number[0:16]
+        part_number_hex = [ord(x) for x in part_number]
+        self.bus.write_i2c_block_data(self.DEV_ADD, 148, part_number_hex) 
+        
+        # Format rev to 2 bytes
+        if len(rev)<2:
             # pad with spaces
-            self.revwr = self.testrev+"".join(" " for x in range(2-len(self.testrev)))
-        elif len(self.testrev)>2:
+            rev = rev+"".join(" " for x in range(2-len(rev)))
+        elif len(rev)>2:
             # truncate
-            self.revwr = self.testrev[0:2]
-        self.revlst = [164]+[ord(x) for x in self.revwr]
-        self.bus.write_i2c_block_data(self.DEV_ADD, self.revlst)
-        self.pn2lst = [224]+[ord(x) for x in self.testpn[0:12]]+[ord(x) for x in "REV "]+[ord(x) for x in self.testrev]
-        if len(self.pn2lst)>33: # 32 bytes + addr
-            self.pn2lst = self.pn2lst[0:33]
-        self.bus.write_i2c_block_data(self.DEV_ADD, self.pn2lst) 
+            rev = rev[0:2]
+        rev_hex = [ord(x) for x in rev]
+        self.bus.write_i2c_block_data(self.DEV_ADD, 164, rev_hex)
+        # Format PartNumber 2 (includes rev)
+        pn2_hex = [ord(x) for x in part_number[0:12]]+[ord(x) for x in "REV "]+[ord(x) for x in rev]
+        if len(pn2_hex)>32: # 32 bytes
+           pn2_hex = pn2_hex[0:32]
+        self.bus.write_i2c_block_data(self.DEV_ADD, 224, pn2_hex) 
         # save sn, write password
         self.bus.write_i2c_block_data(self.DEV_ADD, [122, 0, 0, 0, 16])
+        print("Event: \tReset UUT to Write SN and Wait 2 seconds")
+        self.gpioctrl.reset_uut()
+        time.sleep(2)
         pass
 
     # ------ Sequences ---------------
@@ -149,11 +160,14 @@ class ELB_i2c:
         print("DSP Rev: ",dsp_rev)
         print("FW Version: {}.{}".format(fwver[0], fwver[1]))
         fwver_str = "{}.{}".format(fwver[0], fwver[1])
-        return [dsp_ver, dsp_id, dsp_rev, fwver_str]
+        return [["dsp_version",dsp_ver], 
+                ["dsp_id",dsp_id], 
+                ["dsp_rev",dsp_rev], 
+                ["fwver",fwver_str]]
 
 
     # Full GPIO Sequence
-    def Test_GPIO_all(self) -> list: #returns an array of the GPIO test results
+    def gpio_all(self) -> list: #returns an array of the GPIO test results
         print("***\tGPIO Test\t***")
         # Write Page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])     
@@ -171,7 +185,16 @@ class ELB_i2c:
         pin_lpmode_high = self.__TestGPIO_ELB_In(ELB_GPIOs.LPMODE_HIGH, GPIO_PINS.LPMODE)
         pin_resetl_low  = self.__TestGPIO_ELB_In(ELB_GPIOs.RESET_L_LOW, GPIO_PINS.RESET_L)
         pin_resetl_high = self.__TestGPIO_ELB_In(ELB_GPIOs.RESET_L_HIGH, GPIO_PINS.RESET_L)
-        results = [pin_intl_high, pin_intl_low, pin_presentl_low, pin_presentl_high, pin_modsel_low, pin_modsel_high, pin_lpmode_low, pin_lpmode_high, pin_resetl_low, pin_resetl_high]
+        results = [["intl_high",pin_intl_high], 
+                   ["intl_low",pin_intl_low], 
+                   ["presentl_low",pin_presentl_low], 
+                   ["presentl_high",pin_presentl_high], 
+                   ["modsel_low",pin_modsel_low], 
+                   ["modsel_high",pin_modsel_high], 
+                   ["lpmode_low",pin_lpmode_low], 
+                   ["lpmode_high",pin_lpmode_high], 
+                   ["resetl_low",pin_resetl_low], 
+                   ["resetl_high",pin_resetl_high]]
         # Configure the pins back to the expected mode
         self.gpioctrl.config_pins_todefault()
         # no test mode
@@ -202,7 +225,7 @@ class ELB_i2c:
         print("Reading VCC_RX Voltage: {:.4f}".format(vccrx))
         vbatt = self.__ReadVoltageFnc(VoltageSensors.VBATT)
         print("Reading VBATT Voltage: {:.4f}".format(vbatt))
-        return [["VCC",vcc], ["vcc_tx",vcctx], ["vcc_rx",vccrx], ["vbatt",vbatt]]
+        return [["vcc",vcc], ["vcc_tx",vcctx], ["vcc_rx",vccrx], ["vbatt",vbatt]]
 
     def temp_sensors(self) -> list:
         print("***\tTempSensor Reading\t***")
@@ -223,7 +246,7 @@ class ELB_i2c:
         return [["uc_temp",uc_temp], ["retimer_temp",rt_temp], ["pcb_rt",pcb_rt_temp], ["pcb_pl",pcb_pl_temp], ["shell_f",shell_f_temp], ["shell_r",shell_r_temp]]  
     
 
-    def Get_ePPS_Data(self) -> list:
+    def epps_signal(self) -> list:
         print("***\tGetting ePPS Data\t***")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
@@ -238,10 +261,10 @@ class ELB_i2c:
         freq = self.__ReadEPPS_Data(157, 4)
         duty_percent = self.__ReadEPPS_Data(161, 1)
         duty_ms = self.__ReadEPPS_Data(162, 2)
-        return [freq, duty_percent, duty_ms]
+        return [["freq",freq], ["duty_percent",duty_percent], ["duty_ms",duty_ms]]
 
     def uut_serial_num(self) -> list:
-        print("***\tGet Serial Number\t***")
+        print("Event: \tReading Serial Number")
         # write page 0
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
         # read SN from reg166  
@@ -255,11 +278,13 @@ class ELB_i2c:
         # read revision from reg164
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
         revision = [x for x in retdata] # array that holds the rev number
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 224, 32)
+        pn2 = [x for x in retdata] # array that holds the rev number
         print("Serial Number: "+serial_str)
-        return [["serial",serial_str], ["",part_number], ["rev",revision]]
+        return [["serial",serial_str], ["part_num",part_number], ["rev",revision], ["partnum2", pn2]]
     
     def ins_count(self) -> list:
-        print("***\tInsertion Counter\t***")
+        print("Event: \tReading Insertion Counter")
         # Read the insertion counter
         # write page 0x03
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x03])
@@ -272,12 +297,13 @@ class ELB_i2c:
         ins_nibb = retdata[0]
         return [["ins_accum",ins_accum], ["ins_nible",ins_nibb]]
 
-    def PRBS_Start(self, modrate: MOD_Rates) -> list: 
+    def prbs_start(self) -> list: 
         # start prbs!!!!!!!!!!!!!!!!!!!!
+        print("Event:\tStart of PRBS")
         # write page 0x10
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x10])
         # Write command to set mod mode
-        self.bus.write_i2c_block_data(self.DEV_ADD, 145, modrate)
+        self.bus.write_i2c_block_data(self.DEV_ADD, 145, self.prbs_modrate)
         eqlns = [[6,0,3],[6,0,3],[6,0,3],[6,0,3],[6,0,3],[6,0,3],[6,0,3],[6,0,3]]
         # set working eqs
         for lns2 in range(4):
@@ -323,7 +349,8 @@ class ELB_i2c:
         return [None]
 
 
-    def prbs_results(self, modrate: MOD_Rates) -> list:
+    def prbs_results(self) -> list:
+        print("Event:\tReport PRBS Results")
         lol_status = [-1] * 8
         # get prbs results
         # write page 0x14            
@@ -354,11 +381,11 @@ class ELB_i2c:
             man = u16 & 0x07ff
             # hostchkber is an array that holds the Bit error rate
             if man == 0:
-                hostchkber[ln] = 0.0
+                hostchkber[ln] = ["ber "+ln, 0.0]
             else:
-                hostchkber[ln] = man * (10 ** (s-24))
+                hostchkber[ln] = ["ber "+ln, man * (10 ** (s-24))]
             print("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln],retdata[ln*2],retdata[(ln*2)+1],man,s))
-            lol_status[ln] = hostchklol & (1<<ln)
+            lol_status[ln] = ["LOL "+ln, hostchklol & (1<<ln)]
             
         # write page 0x13
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
@@ -368,18 +395,18 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
         return [lol_status, hostchkber]
 
-    def CurrentSequence(self) -> list:
-        print("***\tCurrent Sensors\t***")
+    def power_loads(self) -> list:
+        print("Event: \tPower Load Test")
         # load/current all on/off
         # all loads off
         # put in low power mode
-        print("***\tPower Load OFF and LowPower Settings**")
+        print("Event: \tPower Load OFF and LowPower Mode")
         self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x30])
         self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
         time.sleep(5)
         # get base vcccurr
         # read currents
-        print("Reading Base Current:")
+        print("Event: \tReading Base Current:")
         i_vcc_base = self.__ReadCurrentSensor(174)
         print("Base Current: {:.4f}".format(i_vcc_base))
         # Load settings #1
@@ -393,11 +420,11 @@ class ELB_i2c:
         # all loads off
         self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
         # put in hi power mode
-        print("**Setting up Hi Power mode**")
+        print("Event: \tSetting up Hi Power mode")
         self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
         time.sleep(10)
-        vcc_currents = [i_vcc_base, i_vcc_0p8, i_vcc_1p6, i_vcc_3p2]
-        rx_currents = [i_vcc_rx_4p0, i_vcc_rx_0p8, i_vcc_rx_1p6, i_vcc_rx_3p2]
-        tx_currents = [i_vcc_tx_4p0, i_vcc_tx_0p8, i_vcc_tx_1p6, i_vcc_tx_3p2]
-        return [vcc_currents, rx_currents, tx_currents]
+        currents = [["i_vcc_base",i_vcc_base], ["i_vcc_0p8,",i_vcc_0p8], ["i_vcc_1p6",i_vcc_1p6], ["i_vcc_3p2",i_vcc_3p2],
+                    ["i_rx_4p0",i_vcc_rx_4p0], ["i_rx_0p8",i_vcc_rx_0p8], ["i_rx_1p6",i_vcc_rx_1p6], ["i_rx_3p2",i_vcc_rx_3p2],
+                    ["i_tx_4p0",i_vcc_tx_4p0], ["i_tx_0p8",i_vcc_tx_0p8], ["i_tx_1p6",i_vcc_tx_1p6], ["i_tx_3p2",i_vcc_tx_3p2]]        
+        return currents
 

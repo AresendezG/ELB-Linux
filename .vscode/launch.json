@@ -9,7 +9,7 @@
          "type":"python",
       "request":"launch",
       "program":"${file}",
-         "args":["ZP3923110076", "seqconfig.xml", "limits.json", "settings.json"],
+         "args":["ZP3923110076", "09", "750-152172", "seqconfig.xml", "limits.json", "settings.json"],
       "console":"integratedTerminal",
    "justMyCode":true
     },
