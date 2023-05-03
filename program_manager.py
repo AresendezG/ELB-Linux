@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from log_management import LOG_Manager
 from Sequencer import SeqConfig
 from firmware import ELBFirmware
@@ -12,14 +13,19 @@ from gpio_ctrl import GPIO_CONTROL
 
 class ProgramControl:  
     
-    sn = ""
+    # Dummy SN to prevent Emtpy 
+    sn = "JNPRSN0102"
+    # Read from the config file
     seq_file = ""
     limits_file = ""
+    # Execution time between sequences, default 1, modified by settings file
+    time_between_seq = 1
     test_settings = None
     # Object to handle the log to files
     logger = None
     # Object to handle the i2c communication with UUT
     i2c_comm = None
+
 
     # Define the stuff that needs to happen for this prog runs 
     def __init__(self, args) -> None:
@@ -78,6 +84,7 @@ class ProgramControl:
         try: 
             # Read settings from the config file
             self.log_path = settings['log_path']
+            self.time_between_seq = settings['seq_sync_time']
 
         except:
             print("ERROR:\tWrong Configuration settings")
@@ -115,6 +122,8 @@ class ProgramControl:
         self.logger.logtofile("Wrote SN: {}".format(self.sn))
         self.logger.logtofile("Wrote Rev: {}".format(self.rev))
         self.logger.logtofile("Wrote Part Number: {}".format(self.partnum))
+        # Wait 2 seconds to sync up 
+        time.sleep(2)
     
     def __RunTest(self, test_fnc:object, retries:int, test_name:str):
         
@@ -143,7 +152,8 @@ class ProgramControl:
                 # get a reference of the test     
                 try:
                     test_fnc_ref = getattr(self.i2c_comm, test_name)
-                    results = self.__RunTest(test_fnc_ref, retries, test_name) 
+                    results = self.__RunTest(test_fnc_ref, retries, test_name)
+                    time.sleep(self.time_between_seq) 
                 except AttributeError:
                     #print("ERROR:\t Unable to find Test: {}".format(test_name))
                     self.logger.logtofile("ERROR:\tTest {} Not Found".format(test_name))

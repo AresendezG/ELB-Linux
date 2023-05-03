@@ -3,5 +3,6 @@
     "fw_file": "/tmp/elb/fw/Balerion_FWRelease69_ID.hex",
     "i2c_default_add": 80, 
     "log_path": "/tmp/elb/logs/",
-    "modrate": "PAM4_50G"
+    "modrate": "PAM4_50G",
+    "seq_sync_time": 3
 }

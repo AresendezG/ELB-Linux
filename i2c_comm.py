@@ -11,7 +11,7 @@ class ELB_i2c:
     #-- Class variables definitions
     # Define i2c Bus as Main
     DEVICE_BUS = 1
-    # Define ELB i2c Address:
+    # Define ELB default i2c Address:
     DEV_ADD = 0x50
     # Define bus object
     bus = None

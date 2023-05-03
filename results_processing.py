@@ -1,11 +1,14 @@
 import os
 import json
+from log_management import LOG_Manager
 
 class ResultsManager:
 
-    item = 0
+    # Get track of all the tests reported to the test log
+    test_counter = 0
 
-    def __init__(self, limits_file:str, results_file_handler:object) -> None:
+    # Init the limits contained in the Limits file
+    def __init__(self, limits_file:str, results_file_handler:LOG_Manager) -> None:
         # Validate and load all the results file
         if (os.path.isfile(limits_file)):
             with open(limits_file, 'r') as f:
@@ -28,6 +31,12 @@ class ResultsManager:
             return ["PASS", True]
         else:
             return ["FAIL", False]
+        
+    def __DetermineStatus_NonNumeric(self, expected:str, uut_response:str) -> list:
+        if (expected == uut_response):
+            return ["PASS", True]
+        else:
+            return ["FAIL", False]
 
 
     # Will determine if the given bunch of results pass or fail
@@ -41,16 +50,24 @@ class ResultsManager:
                 try:
                     # Get individual test limits based on the test name
                     test_limits = seq_limits_list[results[item][0]]
-                    # if the limit is enabled to be reported...
-                    if (test_limits['report']):
+                    # if the giving result is enabled to be reported and its a numeric result
+                    if (test_limits['report'] and test_limits['numeric']):
                         # Determine if measurements is within limits
                         test_status = self.__DetermineTestStatus(test_limits['high_limit'],results[item][1],test_limits['low_limit'])
-                        self.results_log.logresult(item,test_status[0],test_limits['test_name'],test_limits['high_limit'],results[item][1],test_limits['low_limit'])
+                        # Log a new line to the results file
+                        self.results_log.logresult(self.test_counter,test_status[0],test_limits['test_name'],test_limits['high_limit'],results[item][1],test_limits['low_limit'])
                         # This will change to FAIL if the measurement is not within limits
-                        seq_result = test_status[1]
-                        ++item
+                    elif (test_limits['report'] and (not test_limits['numeric'])):
+                        # Determine a pass or fail for non_numeric checks
+                        test_status = self.__DetermineStatus_NonNumeric(test_limits['expected_data'], results[item][1])
+                        # Log a non-numeric to the results file
+                        self.results_log.logresult_nonnumeric(self.test_counter,test_status[0],test_limits['test_name'],test_limits['expected_data'],results[item][1])
+                    # Process the next test result and increase counter
+                    seq_result = test_status[1]
+                    item = item+1
+                    self.test_counter = self.test_counter+1
                 except:
-                    print("ERROR: No Test Limit defined for {}".format(results[item][0]))
+                    print("ERROR:\tNo Test Limit defined for {}".format(results[item][0]))
         except:
             print("Warning:\tSequence {} has no defined Test Limits".format(seqname))
         return seq_result

@@ -78,8 +78,8 @@ class LOG_Manager():
         self.logtofile("UUT SN: "+self.serial)
         self.resultsfile.write("Juniper Electric Loopback TestResults\n")
         self.resultsfile.write("Test Date,{}\n".format(self.logfiletime))
-        self.resultsfile.write("UUT SN,{}".format(self.serial))
-        self.resultsfile.write("Result,Test Name,High Limit,Measurement,Low Limit\n")
+        self.resultsfile.write("UUT SN,{}\n".format(self.serial))
+        self.resultsfile.write("Index,Result,Test Name,High Limit,Measurement,Low Limit\n")
 
 
     def logtofile(self, line: str):
@@ -87,10 +87,19 @@ class LOG_Manager():
         self.logfile.write(line + "\n") # Append new Line
         return
 
-    def logresult(self, testindex:int, result: str, testname:str, measurement:str, highlim: str, lowlim: str):
+    def logresult(self, testindex:int, result: str, testname:str, highlim: str, measurement:str, lowlim: str):
         # display numeric tests in tabseparated
-        str_to_log = "{}\t{}\t{}\t{}\t{}\t{}\n".format(testindex, result, testname, highlim, measurement, lowlim)
+        str_to_log = "{}\t{}\t{}\t{:.4f}\t{:.4f}\t{:.4f}".format(testindex, result, testname, highlim, measurement, lowlim)
         print(str_to_log)
         # log to results file in comma separated
+        str_to_log = "{},{},{},{:.4f},{:.4f},{:.4f}\n".format(testindex, result, testname, highlim, measurement, lowlim)
         self.resultsfile.write(str_to_log)
         pass
+
+    def logresult_nonnumeric(self, testindex:int, result:str, testname:str, expected_data:str, read_data:str):
+        # display numeric tests in tabseparated
+        str_to_log = "{}\t{}\t{}\tExp: {}\tRead: {}".format(testindex, result, testname, expected_data, read_data)
+        print(str_to_log)
+        # log to results file in comma separated
+        str_to_log = "{},{},{},Exp: {},Read: {},NonNumeric\n".format(testindex, result, testname, expected_data, read_data)
+        self.resultsfile.write(str_to_log)
