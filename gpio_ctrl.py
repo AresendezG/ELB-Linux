@@ -1,15 +1,20 @@
 import RPi.GPIO as GPIO
 import time
+import itertools, sys
 from i2c_types import GPIO_PINS
 
 
 class GPIO_CONTROL:
+
+    spinner = itertools.cycle(['-', '/', '|', '\\'])
+    
     def __init__(self) -> None:
+        # Define GPIO map
         GPIO.setmode(GPIO.BCM)
         # Reset the GPIO config
         GPIO.cleanup()
-        
-
+        # Disable channel warning
+        GPIO.setwarnings(False)
         # Define inputs for the RPI and Outs for the ELB
         GPIO.setup(GPIO_PINS.INT_L, GPIO.IN)
         GPIO.setup(GPIO_PINS.PRESENT_L, GPIO.IN)
@@ -56,5 +61,25 @@ class GPIO_CONTROL:
         GPIO.output(GPIO_PINS.RESET_L, GPIO.LOW)
         time.sleep(2)
         GPIO.output(GPIO_PINS.RESET_L, GPIO.HIGH)
-    
+
+    def detect_uut(self, timeout_s:int) -> bool:
+        timeout_ctr = timeout_s * 4
+        counter:int = 0
+        # INT_L is pull to GND when ELB is inserted into the fixture
+        detected = self.read_gpio(GPIO_PINS.INT_L)
+        if detected != 0:
+            print("USER:\tInsert the ELB to the Fixture to Start Test")
+        while (detected != 0 and counter < timeout_ctr):
+            sys.stdout.write(next(self.spinner))   
+            sys.stdout.flush()                
+            sys.stdout.write('\b')           
+            detected = self.read_gpio(GPIO_PINS.INT_L)
+            counter = counter + 1
+            time.sleep(0.25)
+        if self.read_gpio(GPIO_PINS.INT_L) != 0:
+            print("ERROR:\tUser did not inserted the ELB before Timeout expired!")
+            return False
+        else:
+            return True
+            
 

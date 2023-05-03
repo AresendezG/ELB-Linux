@@ -6,6 +6,7 @@ from firmware import ELBFirmware
 from i2c_comm import ELB_i2c
 from results_processing import ResultsManager
 from i2c_types import MOD_Rates
+from gpio_ctrl import GPIO_CONTROL
 
 # This class will define how the program flows
 
@@ -33,7 +34,8 @@ class ProgramControl:
         #self.__Verify_Firmware()
         # Launch the results processing object with a reference to the logger object
         self.results_mgr = ResultsManager(self.limits_file, self.logger)
-
+        # Launch the GPIO controller
+        self.gpioctrl = GPIO_CONTROL()
         pass
     
     def __StartLog(self) -> None:
@@ -92,10 +94,10 @@ class ProgramControl:
     
     # Fnc to handle the firmware upgrade of the UUT
     def __FirmwareUpgrade(self):
-        fwhandler = ELBFirmware(self.config_file)
+        fwhandler = ELBFirmware(self.config_file, self.gpioctrl)
         # Verify the firmware version and try to upgrade it
         [fw_ver, retimer] = fwhandler.fw_verification()
-        self.logger.logtofile("FW Version Before: {}".format(fwhandler.old_fw))
+        self.logger.logtofile("FW Version Before Upgrade: {}".format(fwhandler.old_fw))
         self.logger.logtofile("FW Version After Upgrade: {}".format(fw_ver))
         self.logger.logtofile("Retimer HostAddress: {}".format(retimer))
     
@@ -110,6 +112,9 @@ class ProgramControl:
             self.logger.logtofile("Warning: \tUUT has a valid SN Programmed")
             self.logger.logtofile("Old UUT SN: {}".format(old_sn_str))
         self.i2c_comm.write_uut_sn(self.sn, self.partnum, self.rev)
+        self.logger.logtofile("Wrote SN: {}".format(self.sn))
+        self.logger.logtofile("Wrote Rev: {}".format(self.rev))
+        self.logger.logtofile("Wrote Part Number: {}".format(self.partnum))
     
     def __RunTest(self, test_fnc:object, retries:int, test_name:str):
         
@@ -119,28 +124,31 @@ class ProgramControl:
         pass
     
     def run_program(self):
-        
-        # Firmware Upgrade and SN Programming will execute first
-        print("Event: \tFirmware Programming")
-        self.__FirmwareUpgrade()
-        # Firmware Upgrade completed or Not required, launch i2c Communication
-        self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address)
-        self.__Program_UUT_SN()   
-        print("Event: \tTest Start")
-        executed = 0
-        # For each test in the TestFlow 
-        for test in self.test_flow:
-            # Read the testname from the xml config
-            test_name = test['test_name']
-            retries = int(test['retries'])
-            # get a reference of the test     
-            try:
-                test_fnc_ref = getattr(self.i2c_comm, test_name)
-                results = self.__RunTest(test_fnc_ref, retries, test_name) 
-            except AttributeError:
-                #print("ERROR:\t Unable to find Test: {}".format(test_name))
-                self.logger.logtofile("ERROR:\tTest {} Not Found".format(test_name))
-
+        # Run Detection check
+        self.logger.logtofile("Event:\tRunning Detection")
+        uut_detection = self.gpioctrl.detect_uut(120)
+        if uut_detection:
+            self.logger.logtofile("UUT Detected. Running FW Upgrade")
+            # Firmware Upgrade and SN Programming will execute first
+            print("Event: \tFirmware Programming")
+            self.__FirmwareUpgrade()
+            # Firmware Upgrade completed or Not required, launch i2c Communication
+            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl)
+            self.__Program_UUT_SN()   
+            # For each test in the TestFlow 
+            for test in self.test_flow:
+                # Read the testname from the xml config
+                test_name = test['test_name']
+                retries = int(test['retries'])
+                # get a reference of the test     
+                try:
+                    test_fnc_ref = getattr(self.i2c_comm, test_name)
+                    results = self.__RunTest(test_fnc_ref, retries, test_name) 
+                except AttributeError:
+                    #print("ERROR:\t Unable to find Test: {}".format(test_name))
+                    self.logger.logtofile("ERROR:\tTest {} Not Found".format(test_name))
+        else:
+            self.logger.logtofile("ERROR: \tUser did not inserted the ELB. No test were executed")
         return
 
     

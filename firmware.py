@@ -1,12 +1,12 @@
 from smbus2 import SMBus
+from gpio_ctrl import GPIO_CONTROL
 import subprocess
 import time
 import json
 import os
 
 
-class ELBFirmware:
-    
+class ELBFirmware:    
     # Raspberry Pi i2c Bus port
     rpi_i2cbus = 1
     # Containers for before and after fw versions
@@ -19,8 +19,7 @@ class ELBFirmware:
     # i2c Bus handler
     i2cbus = None
 
-    def __init__(self, settings_file) -> None:
-        
+    def __init__(self, settings_file:str, gpio_ctrl_handler:GPIO_CONTROL) -> None:
         # Already validated, just double verification...
         if (os.path.isfile(settings_file)):
             with open(settings_file, 'r') as f:
@@ -40,6 +39,9 @@ class ELBFirmware:
         except:
             print("ERROR:\tWrong Configuration settings")
             raise FileExistsError
+        # Pass the handler of GPIOs to the local gpioctrl 
+        self.gpioctrl = gpio_ctrl_handler
+        self.gpioctrl.config_pins_todefault()
         pass
     
     # Implement a timeout for the retimer
@@ -82,7 +84,7 @@ class ELBFirmware:
         openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset halt" -c "program Balerion_FWRelease69_ID.hex verify reset exit"
         '''
         # Define the OpenOCD command to run
-        cmd = 'openocd -f interface/raspberrypi-swd.cfg -f target/rp2040.cfg -c "program {} verify reset exit"'.format(self.fw_file)
+        cmd = 'openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset halt" -c "program {} reset exit"'.format(self.fw_file)
         print("Event:\tTrying to program UUT with the following commands:")
         print(cmd)
         # Run the OpenOCD command and capture the output
@@ -110,6 +112,8 @@ class ELBFirmware:
             # Try to upgrade the firmware via OpenOCD and SWD Protocol
             [prog, verify, reset] = self.__fw_upgrade()
             if (prog and verify):
+                # Reboot UUT for 1 seconds
+                self.gpioctrl.reset_uut(2)
                 time.sleep(1)
                 # Try to reach the uC again via i2c
                 self.i2cbus.open(self.rpi_i2cbus)
@@ -117,7 +121,7 @@ class ELBFirmware:
                 # Read new FW Version
                 [fw_str, retimer] = self.__get_current_fw()
             else:
-                print("FAIL:\tFW Upgrade not completed")
+                print("FAIL:\t FW Upgrade not completed")
                 fw_str = "ERROR"
                 retimer = "ERROR"
         

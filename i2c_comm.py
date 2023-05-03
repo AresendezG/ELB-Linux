@@ -20,12 +20,12 @@ class ELB_i2c:
     
     #function declaration
 
-    def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int) -> None:
+    def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL) -> None:
         print("Event:\tInitialize SMBus")
         self.bus = SMBus(self.DEVICE_BUS)
         print("Event:\ti2c Communication with host at address: {}".format(self.DEV_ADD))
         # Start object to handle RPI GPIOs
-        self.gpioctrl = GPIO_CONTROL()
+        self.gpioctrl = gpio_ctrl_handler
         print("Event:\tGPIO Control Started")
         # Define the PRBS Mod Rate from the program manager as it is a setting
         self.prbs_modrate = prbs_modrate 
@@ -131,9 +131,12 @@ class ELB_i2c:
            pn2_hex = pn2_hex[0:32]
         self.bus.write_i2c_block_data(self.DEV_ADD, 224, pn2_hex) 
         # save sn, write password
-        self.bus.write_i2c_block_data(self.DEV_ADD, [122, 0, 0, 0, 16])
+        self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 0, 16])
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
+        time.sleep(1)
         print("Event: \tReset UUT to Write SN and Wait 2 seconds")
-        self.gpioctrl.reset_uut()
+        self.gpioctrl.reset_uut(2)
+        # Let UUT some recovery time
         time.sleep(2)
         pass
 
