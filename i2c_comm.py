@@ -18,7 +18,11 @@ class ELB_i2c:
     bus = None
     # Define GPIO Controller
     gpioctrl = None
-    
+    # Determine if UUT is in high power mode
+    high_power = False
+    # Determine if UUT has started the PRBS Routine
+    prbs_started = False
+
     #function declaration
 
     def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL) -> None:
@@ -288,6 +292,14 @@ class ELB_i2c:
         return [["ins_accum",ins_accum], ["ins_nible",ins_nibb]]
 
     def prbs_start(self) -> list: 
+        # Check first if UUT is in High Power mode
+        if (not self.high_power):
+            print("Warning: \tUUT not in HighPower")
+            self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
+            # put in hi power mode
+            print("Event: \tSetting up Hi Power mode")
+            self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
+            self.high_power = True
         # start prbs!!!!!!!!!!!!!!!!!!!!
         print("Event:\tStart of PRBS")
         # write page 0x10
@@ -336,10 +348,10 @@ class ELB_i2c:
         retdata = [x for x in retdata]
         hostchklol = retdata[0]
         print("host chk lol 0x{:2x}\n".format(hostchklol))
+        self.prbs_started = True
         return [None]
 
-
-    def prbs_results(self) -> list:
+    def __collect_prbs_results(self) -> list:
         print("Event:\tReport PRBS Results")
         lol_status = [-1] * 8
         # get prbs results
@@ -359,7 +371,7 @@ class ELB_i2c:
         hostchkber = [0.0] * 8
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 192, 16)
         retdata = [x for x in retdata]
-         # write page 0x13
+        # write page 0x13
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
         # disable host side gen
         self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
@@ -371,11 +383,11 @@ class ELB_i2c:
             man = u16 & 0x07ff
             # hostchkber is an array that holds the Bit error rate
             if man == 0:
-                hostchkber[ln] = ["ber_"+ln, 0.0]
+                hostchkber[ln] = ["ber_{}".format(ln), 0.0]
             else:
-                hostchkber[ln] = ["ber "+ln, man * (10 ** (s-24))]
-            print("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln],retdata[ln*2],retdata[(ln*2)+1],man,s))
-            lol_status[ln] = ["LOL_"+ln, hostchklol & (1<<ln)]
+                hostchkber[ln] = ["ber_{}".format(ln), man * (10 ** (s-24))]
+            print("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln][1],retdata[ln*2],retdata[(ln*2)+1],man,s))
+            lol_status[ln] = ["LOL_{}".format(ln), hostchklol & (1<<ln)]
             
         # write page 0x13
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
@@ -383,7 +395,20 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
         # disable host side chk
         self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
-        return [lol_status, hostchkber]
+        # Return a single list
+        return (lol_status + hostchkber)
+
+    def prbs_results(self) -> list:
+        # Can only return valid data if the PRBS has started previously
+        if (self.prbs_started):
+            prbs_results = self.__collect_prbs_results()
+        else:
+            print("Warning: \tNo Previous PRBS Start. Starting it now")
+            self.prbs_start()
+            print("Event:\tWaiting 20 seconds for PRBS Results")
+            time.sleep(20)
+            prbs_results = self.__collect_prbs_results()        
+        return prbs_results
 
     def power_loads(self) -> list:
         print("Event: \tPower Load Test")
@@ -413,6 +438,7 @@ class ELB_i2c:
         print("Event: \tSetting up Hi Power mode")
         self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
         time.sleep(10)
+        self.high_power = True
         currents = [["i_vcc_base",i_vcc_base], ["i_vcc_0p8,",i_vcc_0p8], ["i_vcc_1p6",i_vcc_1p6], ["i_vcc_3p2",i_vcc_3p2],
                     ["i_rx_4p0",i_vcc_rx_4p0], ["i_rx_0p8",i_vcc_rx_0p8], ["i_rx_1p6",i_vcc_rx_1p6], ["i_rx_3p2",i_vcc_rx_3p2],
                     ["i_tx_4p0",i_vcc_tx_4p0], ["i_tx_0p8",i_vcc_tx_0p8], ["i_tx_1p6",i_vcc_tx_1p6], ["i_tx_3p2",i_vcc_tx_3p2]]        

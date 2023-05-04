@@ -84,7 +84,7 @@ class ResultsManager:
     
 
     # trim strings to max of 16 characters
-    def trim_str(self, inputstr:str, size:int) -> str:
+    def trim_str(inputstr:str, size:int) -> str:
         if (len(inputstr) <= size):
             # pad with empty chars 
             outstr = inputstr+"".join(" " for x in range(size-len(inputstr)))
@@ -93,7 +93,7 @@ class ResultsManager:
             outstr = inputstr[0:size]
         return outstr
 
-    def create_pn2(self, uut_pn:str, uut_rev:str):
+    def create_pn2(uut_pn:str, uut_rev:str):
         pn2_hex = [ord(x) for x in uut_pn[0:12]]+[ord(x) for x in "REV "]+[ord(x) for x in uut_rev]
         if len(pn2_hex)>32: # 32 bytes
            pn2_hex = pn2_hex[0:32]
@@ -102,10 +102,10 @@ class ResultsManager:
     def Add_SN_ToLimits(self, uut_serial:str, uut_pn:str, uut_rev:str) -> dict:
             
         # Create same strings as those programmed into the UUT
-        uut_serial = self.trim_str(uut_serial, 16)
-        uut_pn = self.trim_str(uut_pn, 16)
-        uut_rev = self.trim_str(uut_rev, 2)
-        uut_pn2_hex = self.create_pn2(uut_pn, uut_rev)
+        uut_serial = ResultsManager.trim_str(uut_serial, 16) # call is as static fnc
+        uut_pn = ResultsManager.trim_str(uut_pn, 16)
+        uut_rev = ResultsManager.trim_str(uut_rev, 2)
+        uut_pn2_hex = ResultsManager.create_pn2(uut_pn, uut_rev)
         uut_pn2_str = "".join(chr(x) for x in uut_pn2_hex)
         # Create a dict with the dynamic parameters
         serialnum_dict:dict = {'uut_serial_num':{
