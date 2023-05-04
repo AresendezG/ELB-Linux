@@ -147,8 +147,238 @@
             "report":true,
             "numeric":true
         } 
+    },
+
+    "gpio_all":
+    {
+        "intl_low":
+        {
+            "test_name": "_tobe_reported",
+            "low_limit": 9999,
+            "high_limit": 9999,
+            "unit": "_your_value",
+            "report":true,
+            "numeric":true
+        },
+
+    },
+    "epps_signal":
+    {
+        "freq":
+        {
+            "test_name": "_tobe_reported",
+            "low_limit": 9999,
+            "high_limit": 9999,
+            "unit": "_your_value",
+            "report":true,
+            "numeric":true
+        },
+        "duty_percent":
+        {
+            "test_name": "_tobe_reported",
+            "low_limit": 9999,
+            "high_limit": 9999,
+            "unit": "_your_value",
+            "report":true,
+            "numeric":true
+        },
+        "duty_ms":
+        {
+            "test_name": "_tobe_reported",
+            "low_limit": 9999,
+            "high_limit": 9999,
+            "unit": "_your_value",
+            "report":true,
+            "numeric":true
+        }
+
+    },
+    "ins_count":
+    {
+        "ins_accum":
+        {
+            "test_name": "INSERTION COUNT",
+            "low_limit": 0,
+            "high_limit": 9999,
+            "unit": "u",
+            "report":true,
+            "numeric":true
+        },
+        "ins_nibble":
+        {
+            "test_name": "INSERTION NIBBLE",
+            "low_limit": 0,
+            "high_limit": 9999,
+            "unit": "u",
+            "report":true,
+            "numeric":true
+        }
+    },
+    "power_loads":
+    {
+        "vcc_base":
+        {
+            "test_name": "_tobe_reported",
+            "low_limit": 9999,
+            "high_limit": 9999,
+            "unit": "_your_value",
+            "report":true,
+            "numeric":true
+        },
+        "non_numeric":
+        {
+            "test_name": "_tobe_reported",
+            "expected_data": "Your_expected_data",
+            "report":true,
+            "numeric":false
+        }
+    },
+    "prbs_results":
+    {
+        "ber_0":
+        {
+            "test_name": "LANE 0 BER",
+            "low_limit": 0,
+            "high_limit": 1e-8,
+            "unit": "b",
+            "report":true,
+            "numeric":true
+        },
+        "ber_1":
+        {
+            "test_name": "LANE 1 BER",
+            "low_limit": 0,
+            "high_limit": 1e-8,
+            "unit": "b",
+            "report":true,
+            "numeric":true
+        },
+        "ber_2":
+        {
+            "test_name": "LANE 2 BER",
+            "low_limit": 0,
+            "high_limit": 1e-8,
+            "unit": "b",
+            "report":true,
+            "numeric":true
+        },
+        "ber_3":
+        {
+            "test_name": "LANE 3 BER",
+            "low_limit": 0,
+            "high_limit": 1e-8,
+            "unit": "b",
+            "report":true,
+            "numeric":true
+        },
+        "ber_4":
+        {
+            "test_name": "LANE 4 BER",
+            "low_limit": 0,
+            "high_limit": 1e-8,
+            "unit": "b",
+            "report":true,
+            "numeric":true
+        },
+        "ber_5":
+        {
+            "test_name": "LANE 5 BER",
+            "low_limit": 0,
+            "high_limit": 1e-8,
+            "unit": "b",
+            "report":true,
+            "numeric":true
+        },
+        "ber_6":
+        {
+            "test_name": "LANE 6 BER",
+            "low_limit": 0,
+            "high_limit": 1e-8,
+            "unit": "b",
+            "report":true,
+            "numeric":true
+        },
+        "ber_7":
+        {
+            "test_name": "LANE 7 BER",
+            "low_limit": 0,
+            "high_limit": 1e-8,
+            "unit": "b",
+            "report":true,
+            "numeric":true
+        },
+        "LOL_0":
+        {
+            "test_name": "LANE 0 LOL",
+            "low_limit": 0,
+            "high_limit": 0,
+            "unit": "N",
+            "report":true,
+            "numeric":true
+        },
+        "LOL_1":
+        {
+            "test_name": "LANE 1 LOL",
+            "low_limit": 0,
+            "high_limit": 0,
+            "unit": "N",
+            "report":true,
+            "numeric":true
+        },
+        "LOL_2":
+        {
+            "test_name": "LANE 2 LOL",
+            "low_limit": 0,
+            "high_limit": 0,
+            "unit": "N",
+            "report":true,
+            "numeric":true
+        },
+        "LOL_3":
+        {
+            "test_name": "LANE 3 LOL",
+            "low_limit": 0,
+            "high_limit": 0,
+            "unit": "N",
+            "report":true,
+            "numeric":true
+        },
+        "LOL_4":
+        {
+            "test_name": "LANE 4 LOL",
+            "low_limit": 0,
+            "high_limit": 0,
+            "unit": "N",
+            "report":true,
+            "numeric":true
+        },
+        "LOL_5":
+        {
+            "test_name": "LANE 5 LOL",
+            "low_limit": 0,
+            "high_limit": 0,
+            "unit": "N",
+            "report":true,
+            "numeric":true
+        },
+        "LOL_6":
+        {
+            "test_name": "LANE 6 LOL",
+            "low_limit": 0,
+            "high_limit": 0,
+            "unit": "N",
+            "report":true,
+            "numeric":true
+        },
+        "LOL_7":
+        {
+            "test_name": "LANE 7 LOL",
+            "low_limit": 0,
+            "high_limit": 0,
+            "unit": "N",
+            "report":true,
+            "numeric":true
+        }
     }
-
-
 
 }

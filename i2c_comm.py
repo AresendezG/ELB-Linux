@@ -1,5 +1,6 @@
 import asyncio
 import time
+from results_processing import ResultsManager as FormatSN
 from i2c_types import GPIO_PINS
 from gpio_ctrl import GPIO_CONTROL
 from i2c_types import LedMode, MOD_Rates, PowerLoad_Modes, ELB_GPIOs
@@ -96,39 +97,24 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0]) 
     
         # Format serial string to 16 bytes
-        if len(serial)<16:
-            # pad the serial number up to 16 chars with empty spaces if needed
-            serial = serial+"".join(" " for x in range(16-len(serial)))
-        elif len(serial)>16:
-            # truncate
-            serial = serial[0:16]
+        serial = FormatSN.trim_str(serial, 16)
         # Convert from string to list of hex bytes
         serial_list = [ord(x) for x in serial]
         self.bus.write_i2c_block_data(self.DEV_ADD, 166, serial_list)
         
         # Format Part Number string to 16 bytes
-        if len(part_number)<16:
-            # pad with spaces
-            part_number = part_number+"".join(" " for x in range(16-len(part_number)))
-        elif len(part_number)>16:
-            # truncate
-            part_number = part_number[0:16]
+        part_number = FormatSN.trim_str(part_number, 16)
+        # Convert from string to list of hex bytes
         part_number_hex = [ord(x) for x in part_number]
         self.bus.write_i2c_block_data(self.DEV_ADD, 148, part_number_hex) 
-        
-        # Format rev to 2 bytes
-        if len(rev)<2:
-            # pad with spaces
-            rev = rev+"".join(" " for x in range(2-len(rev)))
-        elif len(rev)>2:
-            # truncate
-            rev = rev[0:2]
+
+        # Format REV to 2 bytes only        
+        rev = FormatSN.trim_str(rev, 2)
+        # convert rev str into list of bytes
         rev_hex = [ord(x) for x in rev]
         self.bus.write_i2c_block_data(self.DEV_ADD, 164, rev_hex)
-        # Format PartNumber 2 (includes rev)
-        pn2_hex = [ord(x) for x in part_number[0:12]]+[ord(x) for x in "REV "]+[ord(x) for x in rev]
-        if len(pn2_hex)>32: # 32 bytes
-           pn2_hex = pn2_hex[0:32]
+        # Format PartNumber 2 (includes rev) and return a list of bytes
+        pn2_hex = FormatSN.create_pn2(part_number, rev)
         self.bus.write_i2c_block_data(self.DEV_ADD, 224, pn2_hex) 
         # save sn, write password
         self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 0, 16])
@@ -283,8 +269,9 @@ class ELB_i2c:
         revision = [x for x in retdata] # array that holds the rev number
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 224, 32)
         pn2 = [x for x in retdata] # array that holds the rev number
-        print("Serial Number: "+serial_str)
-        return [["serial",serial_str], ["part_num",part_number], ["rev",revision], ["partnum2", pn2]]
+        pn2_str = "".join(chr(x) for x in pn2)
+        #print("Serial Number: "+serial_str)
+        return [["serial",serial_str], ["part_num",part_number], ["rev",revision], ["partnum2", pn2_str]]
     
     def ins_count(self) -> list:
         print("Event: \tReading Insertion Counter")
@@ -384,11 +371,11 @@ class ELB_i2c:
             man = u16 & 0x07ff
             # hostchkber is an array that holds the Bit error rate
             if man == 0:
-                hostchkber[ln] = ["ber "+ln, 0.0]
+                hostchkber[ln] = ["ber_"+ln, 0.0]
             else:
                 hostchkber[ln] = ["ber "+ln, man * (10 ** (s-24))]
             print("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln],retdata[ln*2],retdata[(ln*2)+1],man,s))
-            lol_status[ln] = ["LOL "+ln, hostchklol & (1<<ln)]
+            lol_status[ln] = ["LOL_"+ln, hostchklol & (1<<ln)]
             
         # write page 0x13
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])

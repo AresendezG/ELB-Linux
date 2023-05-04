@@ -6,8 +6,8 @@ import time
 #from i2c_comm import ELB_i2c
 #from i2c_types import MOD_Rates
 from log_management import LOG_Manager
-from firmware import ELBFirmware
-
+# from firmware import ELBFirmware
+from results_processing import ResultsManager
 
 class DummyClass:
     def __init__(self) -> None:
@@ -99,3 +99,23 @@ class i2c_PicoInterface:
         print("FW Version: {}".format(fwver))
         return fwver
 
+
+def __main__():
+    print("Launch Logfile Manager")
+    log_mgr = LOG_Manager("DUMMYSERIAL", "C:\\BalerionELB\\logs\\debuglogs\\")
+    results_mgr = ResultsManager("limits.json", log_mgr)
+    all_lims:dict = results_mgr.all_limits
+    print("Event:\tOriginal Dict")
+    print(all_lims)
+    print("Event:\tUpdating Dict")
+    serial = "SERIALNUMBER"
+    partnumber = "PARTNUMBER" 
+    rev = "09"
+    results_mgr.Add_SN_ToLimits(serial, partnumber, rev)    
+    print("Event:\t Update Dict")
+    print(all_lims)
+
+#__main__()
+
+          
+        

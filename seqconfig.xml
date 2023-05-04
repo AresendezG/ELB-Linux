@@ -12,6 +12,21 @@
     <step name="volt_sensors">
         <config retries="1" flow="cont"/>
     </step>
+    <step name="prbs_start">
+        <config retries="1" flow="cont"/>
+    </step>
+    <step name="gpio_all">
+        <config retries="1" flow="cont"/>
+    </step>
+    <step name="epps_signal">
+        <config retries="1" flow="cont"/>
+    </step>
+    <step name="power_loads">
+        <config retries="1" flow="cont"/>
+    </step>
+    <step name="prbs_results">
+        <config retries="1" flow="cont"/>
+    </step>
     <step name="temp_sensors">
         <config retries="1" flow="cont"/>
     </step>

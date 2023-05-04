@@ -33,13 +33,11 @@ class ProgramControl:
         self.input_args = args
         self.__ValidateArgs()
         self.__StartLog()
-        # por hacer:
-        # Launch the i2c Comm and the GPIO manager?
         self.__Read_FlowConfig()
-        # Firmware not ready yet!
-        #self.__Verify_Firmware()
         # Launch the results processing object with a reference to the logger object
         self.results_mgr = ResultsManager(self.limits_file, self.logger)
+        # Define as testlimit the serial number, partnumber and revision
+        self.results_mgr.Add_SN_ToLimits(self.sn, self.partnum, self.rev)
         # Launch the GPIO controller
         self.gpioctrl = GPIO_CONTROL()
         pass
@@ -149,7 +147,7 @@ class ProgramControl:
                 # Read the testname from the xml config
                 test_name = test['test_name']
                 retries = int(test['retries'])
-                # get a reference of the test     
+                # get a reference of the test to be run    
                 try:
                     test_fnc_ref = getattr(self.i2c_comm, test_name)
                     results = self.__RunTest(test_fnc_ref, retries, test_name)

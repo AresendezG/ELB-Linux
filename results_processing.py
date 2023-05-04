@@ -6,7 +6,8 @@ class ResultsManager:
 
     # Get track of all the tests reported to the test log
     test_counter = 0
-
+    # Create a dict to hold all the test limits
+    all_limits:dict
     # Init the limits contained in the Limits file
     def __init__(self, limits_file:str, results_file_handler:LOG_Manager) -> None:
         # Validate and load all the results file
@@ -80,3 +81,65 @@ class ResultsManager:
             print("Fail:\Wrong Serial Number\tExpected: {}\tRead: {}".format(expected_serial, uut_serial))
             result = False
         return result
+    
+
+    # trim strings to max of 16 characters
+    def trim_str(self, inputstr:str, size:int) -> str:
+        if (len(inputstr) <= size):
+            # pad with empty chars 
+            outstr = inputstr+"".join(" " for x in range(size-len(inputstr)))
+        elif (len(inputstr) > size):
+            # truncate
+            outstr = inputstr[0:size]
+        return outstr
+
+    def create_pn2(self, uut_pn:str, uut_rev:str):
+        pn2_hex = [ord(x) for x in uut_pn[0:12]]+[ord(x) for x in "REV "]+[ord(x) for x in uut_rev]
+        if len(pn2_hex)>32: # 32 bytes
+           pn2_hex = pn2_hex[0:32]
+        return pn2_hex
+
+    def Add_SN_ToLimits(self, uut_serial:str, uut_pn:str, uut_rev:str) -> dict:
+            
+        # Create same strings as those programmed into the UUT
+        uut_serial = self.trim_str(uut_serial, 16)
+        uut_pn = self.trim_str(uut_pn, 16)
+        uut_rev = self.trim_str(uut_rev, 2)
+        uut_pn2_hex = self.create_pn2(uut_pn, uut_rev)
+        uut_pn2_str = "".join(chr(x) for x in uut_pn2_hex)
+        # Create a dict with the dynamic parameters
+        serialnum_dict:dict = {'uut_serial_num':{
+                        "serial":
+                        {
+                        "test_name": "SERIAL_NUMBER_READBACK",
+                    "expected_data": uut_serial,
+                           "report":True,
+                          "numeric":False
+                        },
+                        "part_num":
+                        {
+                        "test_name": "PART_NUMBER_READBACK",
+                    "expected_data": uut_pn,
+                           "report":True,
+                          "numeric":False
+                        },
+                        "rev":
+                        {
+                        "test_name": "REV_READBACK",
+                    "expected_data": uut_rev,
+                           "report":True,
+                          "numeric":False
+                        },
+                        "partnum2":
+                        {
+                        "test_name": "PART_NUMBER_2_READBACK",
+                    "expected_data": uut_pn2_str,
+                           "report":True,
+                          "numeric":False
+                        }           
+                      }
+                      }
+        # Append the newly created dict to the all limits dict
+        self.all_limits.update(serialnum_dict)
+        return self.all_limits
+    
