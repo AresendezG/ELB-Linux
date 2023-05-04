@@ -5,6 +5,7 @@ from i2c_types import GPIO_PINS
 from gpio_ctrl import GPIO_CONTROL
 from i2c_types import LedMode, MOD_Rates, PowerLoad_Modes, ELB_GPIOs
 from i2c_types import CurrentSensors, TempSensors, VoltageSensors
+from i2c_types import con_colors as MessageType
 from smbus2 import SMBus
 
 
@@ -94,7 +95,7 @@ class ELB_i2c:
         return gpio_status
     
     def write_uut_sn(self, serial: str, part_number: str, rev: str):
-        print("Event:\tWriting SN to ELB")
+        self.__print_messages(MessageType.WARNING,"Event:\tWriting SN to ELB")
         # write password
         self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 16, 17])
         # write page 0
@@ -133,7 +134,9 @@ class ELB_i2c:
     # ------ Sequences ---------------
 
     def uut_fw_version(self) -> list:
-        print("***\tGet UUT FW Version\t***")
+        # f"{bcolors.WARNING}Warning: No active frommets remain. Continue?{bcolors.ENDC}"
+        # print(f"{con_colors.WARNING}Event: \tGet UUT FW Version {con_colors.ENDC}")
+        self.__print_messages(MessageType.WARNING,"Event: \tGet UUT FW Version")
         # Write Page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])        
         # Retrieve data from registers
@@ -161,7 +164,7 @@ class ELB_i2c:
 
     # Full GPIO Sequence
     def gpio_all(self) -> list: #returns an array of the GPIO test results
-        print("***\tGPIO Test\t***")
+        self.__print_messages(MessageType.WARNING,"Event: \tTest All GPIOs")
         # Write Page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])     
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x01])
@@ -195,6 +198,7 @@ class ELB_i2c:
         return results
 
     def leds_verification(self):
+        self.__print_messages(MessageType.WARNING,"Event: \tRunning LED Sequence")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # flash LEDs
@@ -207,7 +211,7 @@ class ELB_i2c:
         #self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
 
     def volt_sensors(self) -> list:
-        print("***\tVoltage Sensor Reading\t***")
+        self.__print_messages(MessageType.WARNING,"Event: \tVoltage Sensor Reading")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         vcc = self.__ReadVoltageFnc(VoltageSensors.VCC)
@@ -221,7 +225,7 @@ class ELB_i2c:
         return [["vcc",vcc], ["vcc_tx",vcctx], ["vcc_rx",vccrx], ["vbatt",vbatt]]
 
     def temp_sensors(self) -> list:
-        print("***\tTempSensor Reading\t***")
+        self.__print_messages(MessageType.WARNING,"Event: \tTemp Sensors Reading")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         uc_temp = self.__ReadTempFnc(TempSensors.UC)
@@ -240,7 +244,7 @@ class ELB_i2c:
     
 
     def epps_signal(self) -> list:
-        print("***\tGetting ePPS Data\t***")
+        self.__print_messages(MessageType.WARNING,"Event: \tMeasuring ePPS Signal")
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # ePPS Start capture:
@@ -257,7 +261,7 @@ class ELB_i2c:
         return [["freq",freq], ["duty_percent",duty_percent], ["duty_ms",duty_ms]]
 
     def uut_serial_num(self) -> list:
-        print("Event: \tReading Serial Number")
+        self.__print_messages(MessageType.WARNING,"Event: \tReadback of UUT SN")
         # write page 0
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
         # read SN from reg166  
@@ -271,14 +275,16 @@ class ELB_i2c:
         # read revision from reg164
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
         revision = [x for x in retdata] # array that holds the rev number
+        rev_str = "".join(chr(x) for x in revision)
+        # Read PN-2 from register 224
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 224, 32)
         pn2 = [x for x in retdata] # array that holds the rev number
         pn2_str = "".join(chr(x) for x in pn2)
         #print("Serial Number: "+serial_str)
-        return [["serial",serial_str], ["part_num",part_number], ["rev",revision], ["partnum2", pn2_str]]
+        return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["partnum2", pn2_str]]
     
     def ins_count(self) -> list:
-        print("Event: \tReading Insertion Counter")
+        self.__print_messages(MessageType.WARNING,"Event: \tInsertion Counter")
         # Read the insertion counter
         # write page 0x03
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x03])
@@ -301,7 +307,7 @@ class ELB_i2c:
             self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
             self.high_power = True
         # start prbs!!!!!!!!!!!!!!!!!!!!
-        print("Event:\tStart of PRBS")
+        self.__print_messages(MessageType.WARNING,"Event: \tStart of PRBS")
         # write page 0x10
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x10])
         # Write command to set mod mode
@@ -352,7 +358,7 @@ class ELB_i2c:
         return [None]
 
     def __collect_prbs_results(self) -> list:
-        print("Event:\tReport PRBS Results")
+        self.__print_messages(MessageType.WARNING,"Event: \tReport PRBS Results")
         lol_status = [-1] * 8
         # get prbs results
         # write page 0x14            
@@ -411,7 +417,7 @@ class ELB_i2c:
         return prbs_results
 
     def power_loads(self) -> list:
-        print("Event: \tPower Load Test")
+        self.__print_messages(MessageType.WARNING, "Event: \tPower Load Test")
         # load/current all on/off
         # all loads off
         # put in low power mode
@@ -439,8 +445,13 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
         time.sleep(10)
         self.high_power = True
-        currents = [["i_vcc_base",i_vcc_base], ["i_vcc_0p8,",i_vcc_0p8], ["i_vcc_1p6",i_vcc_1p6], ["i_vcc_3p2",i_vcc_3p2],
+        currents = [["i_vcc_base",i_vcc_base], ["i_vcc_0p8",i_vcc_0p8], ["i_vcc_1p6",i_vcc_1p6], ["i_vcc_3p2",i_vcc_3p2],
                     ["i_rx_4p0",i_vcc_rx_4p0], ["i_rx_0p8",i_vcc_rx_0p8], ["i_rx_1p6",i_vcc_rx_1p6], ["i_rx_3p2",i_vcc_rx_3p2],
                     ["i_tx_4p0",i_vcc_tx_4p0], ["i_tx_0p8",i_vcc_tx_0p8], ["i_tx_1p6",i_vcc_tx_1p6], ["i_tx_3p2",i_vcc_tx_3p2]]        
         return currents
+
+
+    def __print_messages(self, message_type:MessageType, message:str) -> None:
+        print(f"{message_type}{message}{MessageType.ENDC}")
+        pass
 
