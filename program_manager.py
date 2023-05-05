@@ -140,7 +140,7 @@ class ProgramControl:
             print("Event: \tFirmware Programming")
             self.__FirmwareUpgrade()
             # Firmware Upgrade completed or Not required, launch i2c Communication
-            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl)
+            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.logger)
             self.__Program_UUT_SN()   
             # For each test in the TestFlow 
             for test in self.test_flow:

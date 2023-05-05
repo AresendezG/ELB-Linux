@@ -1,4 +1,3 @@
-import asyncio
 import time
 from results_processing import ResultsManager as FormatSN
 from i2c_types import GPIO_PINS
@@ -6,6 +5,7 @@ from gpio_ctrl import GPIO_CONTROL
 from i2c_types import LedMode, MOD_Rates, PowerLoad_Modes, ELB_GPIOs
 from i2c_types import CurrentSensors, TempSensors, VoltageSensors
 from i2c_types import con_colors as MessageType
+from log_management import LOG_Manager
 from smbus2 import SMBus
 
 
@@ -26,19 +26,22 @@ class ELB_i2c:
 
     #function declaration
 
-    def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL) -> None:
-        print("Event:\tInitialize SMBus")
+    def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL, log_handler:LOG_Manager) -> None:
+        self.log_mgr = log_handler
+        self.log_mgr.print_message("Initialize SMBus", MessageType.EVENT)
         self.bus = SMBus(self.DEVICE_BUS)
-        print("Event:\ti2c Communication with host at address: {}".format(self.DEV_ADD))
+        self.log_mgr.print_message("i2c Communication with host at address: {}".format(self.DEV_ADD), MessageType.EVENT)
         # Start object to handle RPI GPIOs
         self.gpioctrl = gpio_ctrl_handler
-        print("Event:\tGPIO Control Started")
+        self.log_mgr.print_message("GPIO Control Started",MessageType.EVENT)
         # Define the PRBS Mod Rate from the program manager as it is a setting
         self.prbs_modrate = prbs_modrate 
         # Define i2c address from the program manager 
         self.DEV_ADD = i2c_add
         pass
     
+    #----- Individual Steps
+
     # Function to test the temperature 
     def __ReadTempFnc(self, regaddress: int) -> float:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, regaddress, 2)
@@ -94,8 +97,10 @@ class ELB_i2c:
         gpio_status = retdata[0]&elb_pin[1]
         return gpio_status
     
+    # ------ Sequences ---------------
+    
     def write_uut_sn(self, serial: str, part_number: str, rev: str):
-        self.__print_messages(MessageType.WARNING,"Event:\tWriting SN to ELB")
+        self.log_mgr.print_message("Writing SN to ELB", MessageType.EVENT)
         # write password
         self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 16, 17])
         # write page 0
@@ -131,12 +136,9 @@ class ELB_i2c:
         time.sleep(2)
         pass
 
-    # ------ Sequences ---------------
-
     def uut_fw_version(self) -> list:
-        # f"{bcolors.WARNING}Warning: No active frommets remain. Continue?{bcolors.ENDC}"
-        # print(f"{con_colors.WARNING}Event: \tGet UUT FW Version {con_colors.ENDC}")
-        self.__print_messages(MessageType.WARNING,"Event: \tGet UUT FW Version")
+
+        self.log_mgr.print_message("Get UUT FW Version", MessageType.EVENT)
         # Write Page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])        
         # Retrieve data from registers
@@ -161,10 +163,9 @@ class ELB_i2c:
                 ["dsp_rev",dsp_rev], 
                 ["fwver",fwver_str]]
 
-
     # Full GPIO Sequence
     def gpio_all(self) -> list: #returns an array of the GPIO test results
-        self.__print_messages(MessageType.WARNING,"Event: \tTest All GPIOs")
+        self.log_mgr.print_message("Test All GPIOs",MessageType.EVENT)
         # Write Page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])     
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x01])
@@ -198,7 +199,7 @@ class ELB_i2c:
         return results
 
     def leds_verification(self):
-        self.__print_messages(MessageType.WARNING,"Event: \tRunning LED Sequence")
+        self.log_mgr.print_message("Running LED Sequence", MessageType.EVENT)
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # flash LEDs
@@ -211,7 +212,7 @@ class ELB_i2c:
         #self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
 
     def volt_sensors(self) -> list:
-        self.__print_messages(MessageType.WARNING,"Event: \tVoltage Sensor Reading")
+        self.log_mgr.print_message("Voltage Sensor Reading", MessageType.EVENT)
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         vcc = self.__ReadVoltageFnc(VoltageSensors.VCC)
@@ -225,7 +226,7 @@ class ELB_i2c:
         return [["vcc",vcc], ["vcc_tx",vcctx], ["vcc_rx",vccrx], ["vbatt",vbatt]]
 
     def temp_sensors(self) -> list:
-        self.__print_messages(MessageType.WARNING,"Event: \tTemp Sensors Reading")
+        self.log_mgr.print_message("Temp Sensors Reading",MessageType.EVENT)
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         uc_temp = self.__ReadTempFnc(TempSensors.UC)
@@ -244,7 +245,7 @@ class ELB_i2c:
     
 
     def epps_signal(self) -> list:
-        self.__print_messages(MessageType.WARNING,"Event: \tMeasuring ePPS Signal")
+        self.log_mgr.print_message("Measuring ePPS Signal",MessageType.EVENT)
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # ePPS Start capture:
@@ -261,7 +262,7 @@ class ELB_i2c:
         return [["freq",freq], ["duty_percent",duty_percent], ["duty_ms",duty_ms]]
 
     def uut_serial_num(self) -> list:
-        self.__print_messages(MessageType.WARNING,"Event: \tReadback of UUT SN")
+        self.log_mgr.print_message("Readback of UUT SN", MessageType.EVENT)
         # write page 0
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
         # read SN from reg166  
@@ -284,7 +285,7 @@ class ELB_i2c:
         return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["partnum2", pn2_str]]
     
     def ins_count(self) -> list:
-        self.__print_messages(MessageType.WARNING,"Event: \tInsertion Counter")
+        self.log_mgr.print_message("Insertion Counter", MessageType.EVENT)
         # Read the insertion counter
         # write page 0x03
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x03])
@@ -307,7 +308,7 @@ class ELB_i2c:
             self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
             self.high_power = True
         # start prbs!!!!!!!!!!!!!!!!!!!!
-        self.__print_messages(MessageType.WARNING,"Event: \tStart of PRBS")
+        self.log_mgr.print_message("Start of PRBS", MessageType.EVENT)
         # write page 0x10
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x10])
         # Write command to set mod mode
@@ -358,7 +359,7 @@ class ELB_i2c:
         return [None]
 
     def __collect_prbs_results(self) -> list:
-        self.__print_messages(MessageType.WARNING,"Event: \tReport PRBS Results")
+        self.log_mgr.print_message("Report PRBS Results", MessageType.EVENT)
         lol_status = [-1] * 8
         # get prbs results
         # write page 0x14            
@@ -417,7 +418,7 @@ class ELB_i2c:
         return prbs_results
 
     def power_loads(self) -> list:
-        self.__print_messages(MessageType.WARNING, "Event: \tPower Load Test")
+        self.log_mgr.print_message("Power Load Test", MessageType.EVENT)
         # load/current all on/off
         # all loads off
         # put in low power mode
@@ -451,7 +452,4 @@ class ELB_i2c:
         return currents
 
 
-    def __print_messages(self, message_type:MessageType, message:str) -> None:
-        print(f"{message_type}{message}{MessageType.ENDC}")
-        pass
 

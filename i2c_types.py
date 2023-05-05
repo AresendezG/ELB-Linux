@@ -74,11 +74,12 @@ class GPIO_PINS:
     PRESENT_L   =   19
 
 
-# Console Messages
+    # Console Messages
 class con_colors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
     OKCYAN = '\033[96m'
+    EVENT = '\033[96m'
     OKGREEN = '\033[92m'
     WARNING = '\033[93m'
     FAIL = '\033[91m'

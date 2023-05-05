@@ -1,9 +1,11 @@
 import os
 import datetime
+from i2c_types import con_colors as MessageType        
 
 class LOG_Manager():
     
     def __init__(self, uut_serial: str, def_path: str) -> None:
+        
         # Var definitions
         self.default_path = def_path
         self.logfile = None     # Handler of the plaintxt logfile
@@ -88,6 +90,8 @@ class LOG_Manager():
         return
 
     def logresult(self, testindex:int, result: str, testname:str, highlim: str, measurement:str, lowlim: str):
+        # Format the result to Green or Red for pass or fail
+        result = self.format_test_for_console(result)
         # display numeric tests in tabseparated
         str_to_log = "{}\t{}\t{}\t{:.4f}\t{:.4f}\t{:.4f}".format(testindex, result, testname, highlim, measurement, lowlim)
         print(str_to_log)
@@ -97,9 +101,38 @@ class LOG_Manager():
         pass
 
     def logresult_nonnumeric(self, testindex:int, result:str, testname:str, expected_data:str, read_data:str):
-        # display numeric tests in tabseparated
+        # Format the result to Green or Red for pass or fail
+        result = self.format_test_for_console(result)
+        # Display to console in Tab Separated format
         str_to_log = "{}\t{}\t{}\tExp: {}\tRead: {}".format(testindex, result, testname, expected_data, read_data)
         print(str_to_log)
         # log to results file in comma separated
         str_to_log = "{},{},{},Exp: {},Read: {},NonNumeric\n".format(testindex, result, testname, expected_data, read_data)
         self.resultsfile.write(str_to_log)
+
+    # Print to console with text characters
+    def print_message(self, message:str, mesg_type:MessageType):
+
+        message_to_print = ""
+        if (mesg_type == MessageType.WARNING):
+            message_to_print = "Warning: \t"
+        elif (mesg_type == MessageType.FAIL):
+            message_to_print = "ERROR: \t"
+        elif (mesg_type == MessageType.EVENT):
+            message_to_print = "Event: \t"
+        #Concatenate Everything
+        print(f"{mesg_type}{message_to_print+message}{MessageType.ENDC}")
+        pass
+
+    # print PASS on Green and FAILs on Red
+    def format_test_for_console(self, status:str) -> str:
+        if (status == "PASS"):
+            mesg_type = MessageType.OKGREEN
+        elif(status == "FAIL"):
+            mesg_type = MessageType.FAIL
+        else:
+            mesg_type = MessageType.ENDC
+        return (f"{mesg_type}{status}{MessageType.ENDC}")
+
+
+

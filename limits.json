@@ -56,8 +56,8 @@
         "vcc":
         {
             "test_name": "VCC",
-            "low_limit": 2.9,
-            "high_limit": 3.4,
+            "low_limit": 3.9,
+            "high_limit": 4.4,
             "unit": "v",
             "report":true,
             "numeric":true
