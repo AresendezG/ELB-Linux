@@ -209,7 +209,6 @@ class ELB_i2c:
                 ["dsp_rev",dsp_rev], 
                 ["fwver",fwver_str]]
 
-    # Full GPIO Sequence
     def gpio_all(self) -> list: #returns an array of the GPIO test results
         self.log_mgr.print_message("Test All GPIOs",MessageType.EVENT)
         # Write Page 3
@@ -445,7 +444,7 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
         time.sleep(10)
         self.high_power = True
-        currents = [["i_vcc_base",i_vcc_base], ["i_vcc_0p8",i_vcc_0p8],   ["i_vcc_1p6",i_vcc_1p6],   ["i_vcc_3p2",i_vcc_3p2],
+        currents = [["i_vcc_base",i_vcc_base], ["i_vcc_0p8",(i_vcc_0p8-i_vcc_base)],   ["i_vcc_1p6",(i_vcc_1p6-i_vcc_base)],   ["i_vcc_3p2",(i_vcc_3p2 - i_vcc_base)],
                     ["i_rx_4p0",i_vcc_rx_4p0], ["i_rx_0p8",i_vcc_rx_0p8], ["i_rx_1p6",i_vcc_rx_1p6], ["i_rx_3p2",i_vcc_rx_3p2],
                     ["i_tx_4p0",i_vcc_tx_4p0], ["i_tx_0p8",i_vcc_tx_0p8], ["i_tx_1p6",i_vcc_tx_1p6], ["i_tx_3p2",i_vcc_tx_3p2]]        
         return currents
