@@ -1,5 +1,6 @@
 from smbus2 import SMBus
 from gpio_ctrl import GPIO_CONTROL
+from log_management import LOG_Manager, MessageType
 import subprocess
 import time
 import json
@@ -18,14 +19,18 @@ class ELBFirmware:
     i2c_address = ""
     # i2c Bus handler
     i2cbus = None
+    log_mgr = None
 
-    def __init__(self, settings_file:str, gpio_ctrl_handler:GPIO_CONTROL) -> None:
+    def __init__(self, settings_file:str, gpio_ctrl_handler:GPIO_CONTROL, log_handler: LOG_Manager) -> None:
+        
+        # Pass log handler to local control
+        self.log_mgr = log_handler
         # Already validated, just double verification...
         if (os.path.isfile(settings_file)):
             with open(settings_file, 'r') as f:
                 settings = json.load(f)
         else:
-            print("ERROR:\tConfiguration File does not exist")
+            self.log_mgr.print_message("ERROR:\tConfiguration File does not exist", MessageType.FAIL, True)
             raise FileNotFoundError
         try: 
             # Read settings from the config file
@@ -34,10 +39,13 @@ class ELBFirmware:
             self.i2c_address = settings['i2c_default_add']
             # Verify that FW File specified in settings file works
             if (not os.path.isfile(self.fw_file)):
-                print("ERROR:\tFirmware File does not exist")
+                self.log_mgr.print_message("ERROR:\tFirmware File does not exist", MessageType.FAIL, True)
+                self.log_mgr.print_message("Terminating Execution", MessageType.WARNING, True)
                 raise FileNotFoundError
         except:
-            print("ERROR:\tWrong Configuration settings")
+            # Config settings are invalid, terminate execution
+            self.log_mgr.print_message("ERROR:\t Wrong or Invalid Configuration Settings", MessageType.FAIL, True)
+            self.log_mgr.print_message("Terminating Execution", MessageType.WARNING, True)
             raise FileExistsError
         # Pass the handler of GPIOs to the local gpioctrl 
         self.gpioctrl = gpio_ctrl_handler
@@ -69,7 +77,7 @@ class ELBFirmware:
         self.i2cbus.write_i2c_block_data(self.i2c_address, 127, [3])
         fw = self.i2cbus.read_i2c_block_data(self.i2c_address, 39, 2)
         fw_str = "{}.{}".format(fw[0], fw[1])
-        print("Event:\tFirmware Version before Upgrade: {}".format(fw_str))
+        self.log_mgr.print_message("Firmware Version before Upgrade: {}".format(fw_str), MessageType.EVENT, True)
         return [fw_str, retimer]
     
     # Requires the settings file to determine the filename of the FW to upgrade
@@ -90,15 +98,15 @@ class ELBFirmware:
         # Run the OpenOCD command and capture the output
         try:
             output = subprocess.check_output(cmd, shell=True)
-            # Print the output
-            print(output)
+            # Print the output (does nothing!)
+            #print(output)
             #prog_completed = output.find("Programming Finished")
             #verified = output.find("Verified OK")
             #reset = output.find("Resetting Target")
-            print("Event:\tSuccessfull Programming")
+            self.log_mgr.print_message("Successfull Programming", MessageType.EVENT, True)
             out_list = [True, True, True]
         except:
-            print("ERROR:\tUnable to Load FW into UUT")
+            self.log_mgr.print_message("ERROR:\t Unable to Load FW into UUT", MessageType.FAIL, True)
             out_list = [False, False, False]
 
         return out_list
@@ -121,7 +129,7 @@ class ELBFirmware:
                 # Read new FW Version
                 [fw_str, retimer] = self.__get_current_fw()
             else:
-                print("FAIL:\t FW Upgrade not completed")
+                self.log_mgr.print_message("FAILURE:\t Unable to verify FW Version", MessageType.FAIL, True)
                 fw_str = "ERROR"
                 retimer = "ERROR"
         

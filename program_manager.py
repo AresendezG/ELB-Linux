@@ -1,7 +1,7 @@
 import os
 import json
 import time
-from log_management import LOG_Manager
+from log_management import LOG_Manager, MessageType
 from Sequencer import SeqConfig
 from firmware import ELBFirmware
 from i2c_comm import ELB_i2c
@@ -13,7 +13,7 @@ from gpio_ctrl import GPIO_CONTROL
 
 class ProgramControl:  
     
-    # Dummy SN to prevent Emtpy 
+    # Dummy SN to prevent Emtpy SNs 
     sn = "JNPRSN0102"
     # Read from the config file
     seq_file = ""
@@ -22,32 +22,34 @@ class ProgramControl:
     time_between_seq = 1
     test_settings = None
     # Object to handle the log to files
-    logger = None
+    log_mgr = None
     # Object to handle the i2c communication with UUT
     i2c_comm = None
 
 
-    # Define the stuff that needs to happen for this prog runs 
+    # Define the stuff that needs to happen for this object runs 
     def __init__(self, args) -> None:
         print("Message: \tInit Test Program")
         self.input_args = args
         self.__ValidateArgs()
         self.__StartLog()
         self.__Read_FlowConfig()
-        # Launch the results processing object with a reference to the logger object
-        self.results_mgr = ResultsManager(self.limits_file, self.logger)
+        # Launch the results processing object with a reference to the log_mgr object
+        self.results_mgr = ResultsManager(self.limits_file, self.log_mgr)
         # Define as testlimit the serial number, partnumber and revision
         self.results_mgr.Add_SN_ToLimits(self.sn, self.partnum, self.rev)
         # Launch the GPIO controller
-        self.gpioctrl = GPIO_CONTROL()
+        self.gpioctrl = GPIO_CONTROL(self.log_mgr)
         pass
     
     def __StartLog(self) -> None:
         try:
-            # Start Logfile
-            self.logger = LOG_Manager(self.sn, self.log_path)
+            # Start Logfile handler. This is also the console rich handler.
+            self.log_mgr = LOG_Manager(self.sn, self.log_path)
         except:
-            print("ERROR: \tUnable to Start the Logfile. Verify settings")    
+            print("ERROR: \tUnable to Start the Logfiles. Verify settings")
+            # We dont want executions with empty lofgiles. Stop Here.
+            raise RuntimeError    
 
     def __ValidateArgs(self):
         
@@ -95,31 +97,34 @@ class ProgramControl:
             self.test_flow = xml_handler.ReadSeq_Settings(self.seq_file)
             self.test_count = xml_handler.test_count
         except:
-            self.logger.logtofile("ERROR:\tUnable to read the sequence XML Config File")
+            self.log_mgr.print_message("ERROR: Unable to read Sequence XML File. Stopping Execution", MessageType.FAIL)
+            self.log_mgr.logtofile("ERROR:\tUnable to read the sequence XML Config File. Stopping")
+            raise RuntimeError
     
     # Fnc to handle the firmware upgrade of the UUT
     def __FirmwareUpgrade(self):
-        fwhandler = ELBFirmware(self.config_file, self.gpioctrl)
+        self.log_mgr.print_message("Firmware Programming", MessageType.EVENT, True)
+        fwhandler = ELBFirmware(self.config_file, self.gpioctrl, self.log_mgr)
         # Verify the firmware version and try to upgrade it
         [fw_ver, retimer] = fwhandler.fw_verification()
-        self.logger.logtofile("FW Version Before Upgrade: {}".format(fwhandler.old_fw))
-        self.logger.logtofile("FW Version After Upgrade: {}".format(fw_ver))
-        self.logger.logtofile("Retimer HostAddress: {}".format(retimer))
+        self.log_mgr.logtofile("FW Version Before Upgrade: {}".format(fwhandler.old_fw))
+        self.log_mgr.logtofile("FW Version After Upgrade: {}".format(fw_ver))
+        self.log_mgr.logtofile("Retimer HostAddress: {}".format(retimer))
     
     def __Program_UUT_SN(self):
-        print("Event: \tSerial Number Programming")
+        self.log_mgr.print_message("Serial Number Programming", MessageType.WARNING, True)
         # Read the old SN (if any)
         old_uut_data = self.i2c_comm.uut_serial_num()
         old_sn_str:str
         old_sn_str = old_uut_data[0][1]
         # Data in the SN register is Juniper format, thus this is a re-test
         if (old_sn_str[0:2] == "ZP"):
-            self.logger.logtofile("Warning: \tUUT has a valid SN Programmed")
-            self.logger.logtofile("Old UUT SN: {}".format(old_sn_str))
+            self.log_mgr.print_message("UUT has a valid SN already Programmed", MessageType.WARNING, True)
+            self.log_mgr.print_message("Old UUT SN: {}".format(old_sn_str), MessageType.WARNING, True)
         self.i2c_comm.write_uut_sn(self.sn, self.partnum, self.rev)
-        self.logger.logtofile("Wrote SN: {}".format(self.sn))
-        self.logger.logtofile("Wrote Rev: {}".format(self.rev))
-        self.logger.logtofile("Wrote Part Number: {}".format(self.partnum))
+        self.log_mgr.print_message("New SN: {}".format(self.sn), MessageType.EVENT, True)
+        self.log_mgr.print_message("Revision {}".format(self.rev), MessageType.EVENT, True)
+        self.log_mgr.print_message("Part Number: {}".format(self.partnum), MessageType.EVENT, True)
         # Wait 2 seconds to sync up 
         time.sleep(2)
     
@@ -132,15 +137,14 @@ class ProgramControl:
     
     def run_program(self):
         # Run Detection check
-        self.logger.logtofile("Event:\tRunning Detection")
-        uut_detection = self.gpioctrl.detect_uut(120)
+        self.log_mgr.logtofile("Event:\tRunning Detection")
+        uut_detection = self.gpioctrl.detect_uut(180)
         if uut_detection:
-            self.logger.logtofile("UUT Detected. Running FW Upgrade")
+            self.log_mgr.logtofile("UUT Detected. Running FW Upgrade")
             # Firmware Upgrade and SN Programming will execute first
-            print("Event: \tFirmware Programming")
             self.__FirmwareUpgrade()
             # Firmware Upgrade completed or Not required, launch i2c Communication
-            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.logger)
+            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr)
             self.__Program_UUT_SN()   
             # For each test in the TestFlow 
             for test in self.test_flow:
@@ -154,9 +158,9 @@ class ProgramControl:
                     time.sleep(self.time_between_seq) 
                 except AttributeError:
                     #print("ERROR:\t Unable to find Test: {}".format(test_name))
-                    self.logger.logtofile("ERROR:\tTest {} Not Found".format(test_name))
+                    self.log_mgr.print_message("Test {} Not Found".format(test_name), MessageType.WARNING, True)
         else:
-            self.logger.logtofile("ERROR: \tUser did not inserted the ELB. No test were executed")
+            self.log_mgr.print_message("User did not inserted the ELB. No test were executed", MessageType.WARNING, True)
         return
 
     

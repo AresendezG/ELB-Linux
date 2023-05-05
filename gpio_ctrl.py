@@ -2,13 +2,16 @@ import RPi.GPIO as GPIO
 import time
 import itertools, sys
 from i2c_types import GPIO_PINS
+from log_management import LOG_Manager, MessageType
 
 
 class GPIO_CONTROL:
 
     spinner = itertools.cycle(['-', '/', '|', '\\'])
+    # Handler of the Logger Object
+    log_mgr = None
     
-    def __init__(self) -> None:
+    def __init__(self, log_handler: LOG_Manager) -> None:
         # Define GPIO map
         GPIO.setmode(GPIO.BCM)
         # Reset the GPIO config
@@ -22,9 +25,11 @@ class GPIO_CONTROL:
         GPIO.setup(GPIO_PINS.LPMODE, GPIO.OUT)
         GPIO.setup(GPIO_PINS.MODSEL, GPIO.OUT)
         GPIO.setup(GPIO_PINS.RESET_L, GPIO.OUT)
+        # pass control of the logger object to local object
+        self.log_mgr = log_handler
 
         self.config_pins_todefault()
-        print("MSG: Configured the GPIOs to default")
+        self.log_mgr.print_message("Configured the GPIOs to default",MessageType.WARNING)
 
         GPIO.setup(17, GPIO.OUT)
         self.p = GPIO.PWM(17, 1)  # channel=17 1Hz to create the PPS
@@ -34,7 +39,7 @@ class GPIO_CONTROL:
         pass
 
     def __del__(self):
-        print("MSG: Cleaning GPIO Config")
+        self.log_mgr.print_message("Cleaning GPIO Config", MessageType.WARNING)
         self.config_pins_todefault()
         self.p.stop()
         time.sleep(2)
@@ -68,7 +73,7 @@ class GPIO_CONTROL:
         # INT_L is pull to GND when ELB is inserted into the fixture
         detected = self.read_gpio(GPIO_PINS.INT_L)
         if detected != 0:
-            print("USER:\tInsert the ELB to the Fixture to Start Test")
+            self.log_mgr.print_message("Insert the ELB to the Fixture to Start Test", MessageType.USER)
         while (detected != 0 and counter < timeout_ctr):
             sys.stdout.write(next(self.spinner))   
             sys.stdout.flush()                
@@ -77,7 +82,7 @@ class GPIO_CONTROL:
             counter = counter + 1
             time.sleep(0.25)
         if self.read_gpio(GPIO_PINS.INT_L) != 0:
-            print("ERROR:\tUser did not inserted the ELB before Timeout expired!")
+            self.log_mgr.print_message("FAIL: ELB Not Detected before Timeout Expired!", MessageType.FAIL)
             return False
         else:
             return True

@@ -43,9 +43,9 @@ class ELB_GPIOs:
 	RESET_L_LOW    	=   [0, 0x04]
 	RESET_L_HIGH	=	[1, 0x04]
     # ELB Outputs
-	INT_L_HIGH      =   [0x00]
+	INT_L_LOW      	=   [0x00]
 	PRESENT_L_LOW   =   [0x00]
-	INT_L_LOW		=	[0x01]
+	INT_L_HIGH		=	[0x01]
 	PRESENT_L_HIGH	=	[0x02]
 
 class EPPS_Data:
@@ -74,15 +74,3 @@ class GPIO_PINS:
     PRESENT_L   =   19
 
 
-    # Console Messages
-class con_colors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    EVENT = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'

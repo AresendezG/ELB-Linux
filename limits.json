@@ -24,23 +24,27 @@
         "dsp_version":
         {
             "test_name": "DSP_VERSION",
-            "expected_data": "3490643968",
+            "expected_data": 3490643968,
+            "low_limit": 3490643968,
+            "high_limit": 3490643968,
             "report":true,
-            "numeric":false
+            "numeric":true
         },
         "dsp_id":
         {
             "test_name": "DSP_ID",
-            "expected_data": "555008",
+            "low_limit": 555008,
+            "high_limit": 555008,
             "report":true,
-            "numeric":false
+            "numeric":true
         },
         "dsp_rev":
         {
             "test_name": "DSP_REVISION",
-            "expected_data": "160",
+            "low_limit": 160,
+            "high_limit": 160,
             "report":true,
-            "numeric":false
+            "numeric":true
         },
         "fwver":
         {
@@ -56,8 +60,8 @@
         "vcc":
         {
             "test_name": "VCC",
-            "low_limit": 3.9,
-            "high_limit": 4.4,
+            "low_limit": 2.97,
+            "high_limit": 3.465,
             "unit": "v",
             "report":true,
             "numeric":true
@@ -65,8 +69,8 @@
         "vcc_tx":
         {
             "test_name": "VCC_TX",
-            "low_limit": 2.9,
-            "high_limit": 3.4,
+            "low_limit": 3.135,
+            "high_limit": 3.465,
             "unit": "v",
             "report":true,
             "numeric":true
@@ -74,8 +78,8 @@
         "vcc_rx":
         {
             "test_name": "VCC_RX",
-            "low_limit": 2.9,
-            "high_limit": 3.4,
+            "low_limit": 3.135,
+            "high_limit": 3.465,
             "unit": "v",
             "report":true,
             "numeric":true
@@ -83,8 +87,8 @@
         "vbatt":
         {
             "test_name": "VBATT",
-            "low_limit": 2.9,
-            "high_limit": 3.4,
+            "low_limit": 2.85,
+            "high_limit": 3.15,
             "unit": "v",
             "report":true,
             "numeric":true
@@ -172,8 +176,8 @@
         "presentl_low":
         {
             "test_name": "PRESENT L LOW",
-            "low_limit": 1,
-            "high_limit": 1,
+            "low_limit": 0,
+            "high_limit": 0,
             "unit": "NA",
             "report":true,
             "numeric":true
@@ -217,8 +221,8 @@
         "lpmode_high":
         {
             "test_name": "LPMODE HIGH",
-            "low_limit": 1,
-            "high_limit": 1,
+            "low_limit": 2,
+            "high_limit": 2,
             "unit": "NA",
             "report":true,
             "numeric":true
@@ -235,8 +239,8 @@
         "resetl_high":
         {
             "test_name": "RESET HIGH",
-            "low_limit": 1,
-            "high_limit": 1,
+            "low_limit": 4,
+            "high_limit": 4,
             "unit": "NA",
             "report":true,
             "numeric":true
@@ -247,8 +251,8 @@
         "freq":
         {
             "test_name": "EPPS FREQ HZ",
-            "low_limit": 12490000,
-            "high_limit": 12550000,
+            "low_limit": 12375000,
+            "high_limit": 12625000,
             "unit": "Hz",
             "report":true,
             "numeric":true
@@ -256,8 +260,8 @@
         "duty_percent":
         {
             "test_name": "EPPS Duty Percent",
-            "low_limit": 50,
-            "high_limit": 100,
+            "low_limit": 47.5,
+            "high_limit": 52.5,
             "unit": "%",
             "report":true,
             "numeric":true
@@ -266,7 +270,7 @@
         {
             "test_name": "DUTY in MS",
             "low_limit": 990,
-            "high_limit": 1100,
+            "high_limit": 1010,
             "unit": "ms",
             "report":true,
             "numeric":true
@@ -288,7 +292,7 @@
         {
             "test_name": "INSERTION NIBBLE",
             "low_limit": 0,
-            "high_limit": 9999,
+            "high_limit": 0,
             "unit": "u",
             "report":true,
             "numeric":true
@@ -299,8 +303,8 @@
         "i_vcc_base":
         {
             "test_name": "CURRENT VCC BASE",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.15,
+            "high_limit": 0.5,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -326,8 +330,8 @@
         "i_vcc_3p2":
         {
             "test_name": "CURRENT VCC LOAD 3.2 W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.87,
+            "high_limit": 0.96,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -335,8 +339,8 @@
         "i_rx_4p0":
         {
             "test_name": "CURRENT RX LOAD 4.0W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 1.08,
+            "high_limit": 1.19,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -344,8 +348,8 @@
         "i_rx_0p8":
         {
             "test_name": "CURRENT RX LOAD 0.8 W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.22,
+            "high_limit": 0.25,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -353,8 +357,8 @@
         "i_rx_1p6":
         {
             "test_name": "CURRENT RX LOAD 1.6 W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.44,
+            "high_limit": 0.49,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -362,8 +366,8 @@
         "i_rx_3p2":
         {
             "test_name": "CURRENT RX LOAD 3.2 W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.87,
+            "high_limit": 0.96,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -371,8 +375,8 @@
         "i_tx_4p0":
         {
             "test_name": "CURRENT TX LOAD 4.0W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 1.08,
+            "high_limit": 1.19,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -380,8 +384,8 @@
         "i_tx_0p8":
         {
             "test_name": "CURRENT TX LOAD 0.8 W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.22,
+            "high_limit": 0.25,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -389,8 +393,8 @@
         "i_tx_1p6":
         {
             "test_name": "CURRENT TX LOAD 1.6 W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.44,
+            "high_limit": 0.49,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -398,8 +402,8 @@
         "i_tx_3p2":
         {
             "test_name": "CURRENT TX LOAD 3.2 W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.87,
+            "high_limit": 0.96,
             "unit": "A",
             "report":true,
             "numeric":true

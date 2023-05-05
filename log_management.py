@@ -1,6 +1,21 @@
 import os
 import datetime
-from i2c_types import con_colors as MessageType        
+     
+
+    # Console Messages
+class MessageType:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    USER = '\033[94m' #BLUE
+    OKCYAN = '\033[96m'
+    EVENT = '\033[96m' #CYAN
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m' #YELLOW
+    FAIL = '\033[91m' #RED 
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
 
 class LOG_Manager():
     
@@ -111,7 +126,7 @@ class LOG_Manager():
         self.resultsfile.write(str_to_log)
 
     # Print to console with text characters
-    def print_message(self, message:str, mesg_type:MessageType):
+    def print_message(self, message:str, mesg_type:MessageType, logtofile:bool = False):
 
         message_to_print = ""
         if (mesg_type == MessageType.WARNING):
@@ -120,8 +135,13 @@ class LOG_Manager():
             message_to_print = "ERROR: \t"
         elif (mesg_type == MessageType.EVENT):
             message_to_print = "Event: \t"
+        elif (mesg_type == MessageType.USER):
+            message_to_print = "USER INPUT: \t"
         #Concatenate Everything
         print(f"{mesg_type}{message_to_print+message}{MessageType.ENDC}")
+        # Caller decides if this goes to file or not. Default is not
+        if (logtofile):
+            self.logfile.write(message_to_print+message + "\n") # Append new Line
         pass
 
     # print PASS on Green and FAILs on Red
