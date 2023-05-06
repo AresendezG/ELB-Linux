@@ -106,13 +106,18 @@ class LOG_Manager():
 
     def logresult(self, testindex:int, result: str, testname:str, highlim: str, measurement:str, lowlim: str):
         # Format the result to Green or Red for pass or fail
-        result = self.format_test_for_console(result)
-        # display numeric tests in tabseparated
-        str_to_log = "{}\t{}\t{}\t{:.4f}\t{:.4f}\t{:.4f}".format(testindex, result, testname, highlim, measurement, lowlim)
-        print(str_to_log)
-        # log to results file in comma separated
-        str_to_log = "{},{},{},{:.4f},{:.4f},{:.4f}\n".format(testindex, result, testname, highlim, measurement, lowlim)
-        self.resultsfile.write(str_to_log)
+        colored_result = self.format_test_for_console(result)
+        # Display in Scientific Notation only for BER resulys
+        if (float(measurement) < 1e-6 and float(measurement) > 0):
+            str_to_log_console = "{}\t{}\t{}\t{:e}\t{:e}\t{:.1f}".format(testindex, colored_result, testname, highlim, measurement, lowlim)
+            str_to_log_file = "{},{},{},{:e},{:e},{:.1f}\n".format(testindex, result, testname, highlim, measurement, lowlim)
+        else:
+            str_to_log_console = "{}\t{}\t{}\t{:.4f}\t{:.4f}\t{:.4f}".format(testindex, colored_result, testname, highlim, measurement, lowlim)
+            str_to_log_file = "{},{},{},{:.4f},{:.4f},{:.4f}\n".format(testindex, result, testname, highlim, measurement, lowlim)
+        # Print info to console
+        print(str_to_log_console)
+        # Log the line to file
+        self.resultsfile.write(str_to_log_file)
         pass
 
     def logresult_nonnumeric(self, testindex:int, result:str, testname:str, expected_data:str, read_data:str):
