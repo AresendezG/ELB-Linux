@@ -19,6 +19,53 @@
         }
     },
 
+    "prbs_start":
+    {
+        "host_check":
+        {
+            "test_name": "HOST CHECK LOL STATUS",
+            "low_limit": 0,
+            "high_limit": 0,
+            "unit": "nA",
+            "report":true,
+            "numeric":true
+        }
+    },
+
+    "leds_verification_random":
+    {
+        "led_flash":
+        {
+            "test_name": "LED FLASH",
+            "expected_data": "PASS",
+            "report":true,
+            "numeric":false
+        },
+        "led_green":
+        {
+            "test_name": "LED GREEN",
+            "expected_data": "PASS",
+            "report":true,
+            "numeric":false
+        },
+        "led_red":
+        {
+            "test_name": "LED RED",
+            "expected_data": "PASS",
+            "report":true,
+            "numeric":false
+        },
+        "led_off":
+        {
+            "test_name": "LED OFF",
+            "expected_data": "PASS",
+            "report":true,
+            "numeric":false
+        }
+
+    },
+
+
     "uut_fw_version":
     {
         "dsp_version":
@@ -312,8 +359,8 @@
         "i_vcc_0p8":
         {
             "test_name": "CURRENT VCC LOAD 0.8 W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.22,
+            "high_limit": 0.26,
             "unit": "A",
             "report":true,
             "numeric":true
@@ -321,8 +368,8 @@
         "i_vcc_1p6":
         {
             "test_name": "CURRENT VCC LOAD 1.6 W",
-            "low_limit": 0,
-            "high_limit": 2,
+            "low_limit": 0.44,
+            "high_limit": 0.49,
             "unit": "A",
             "report":true,
             "numeric":true

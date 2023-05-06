@@ -6,7 +6,8 @@ from results_processing import ResultsManager
 
 #'''
 Main = ProgramControl(sys.argv)
-Main.run_program()
+result = Main.run_program()
+print(f"Execution Result: {result}")
 #'''
 
 #rslt_handler = ResultsManager("limits.json")

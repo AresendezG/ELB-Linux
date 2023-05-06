@@ -104,31 +104,92 @@ class LOG_Manager():
         self.logfile.write(line + "\n") # Append new Line
         return
 
-    def logresult(self, testindex:int, result: str, testname:str, highlim: str, measurement:str, lowlim: str):
+
+    def log_sequence_results(self, loglines:list):
+        
+        for item in range(len(loglines)):
+            if (loglines[item][0] == "NUM"):
+                self.log_numeric_tofile(loglines[item][1:])
+            elif (loglines[item][0] == "P/F"):
+                self.log_nonnumeric_tofile(loglines[item][1:])
+        pass
+
+
+    def logresult_numeric(self, testindex:int, result: str, testname:str, highlim: str, measurement:str, lowlim: str):
+        # print in console
+        self.print_numeric_console(testindex, result, testname, highlim, measurement, lowlim)
+        # Log to file
+        self.log_numeric_tofile(testindex, result, testname, highlim, measurement, lowlim)
+        pass
+
+    def print_numeric_console(self, testindex:int, result: str, testname:str, highlim: str, measurement:str, lowlim: str):
         # Format the result to Green or Red for pass or fail
         colored_result = self.format_test_for_console(result)
         # Display in Scientific Notation only for BER resulys
         if (float(measurement) < 1e-6 and float(measurement) > 0):
             str_to_log_console = "{}\t{}\t{}\t{:e}\t{:e}\t{:.1f}".format(testindex, colored_result, testname, highlim, measurement, lowlim)
-            str_to_log_file = "{},{},{},{:e},{:e},{:.1f}\n".format(testindex, result, testname, highlim, measurement, lowlim)
         else:
             str_to_log_console = "{}\t{}\t{}\t{:.4f}\t{:.4f}\t{:.4f}".format(testindex, colored_result, testname, highlim, measurement, lowlim)
-            str_to_log_file = "{},{},{},{:.4f},{:.4f},{:.4f}\n".format(testindex, result, testname, highlim, measurement, lowlim)
         # Print info to console
         print(str_to_log_console)
+        pass
+
+    def log_numeric_tofile(self, inputlist:list = None, testindex = 0, result = "NUM", testname = "TESTNAME", highlim = "0.0", measurement = "1.0", lowlim = "2.0"):
+
+        # All parameters passed as list:
+        if (inputlist != None):
+            try:
+                testindex = inputlist[0]
+                result = inputlist[1]
+                testname = inputlist[2]
+                highlim = inputlist[3]
+                measurement = inputlist[4]
+                lowlim = inputlist[5]            
+            except:
+                self.print_message("Wrong List of Parameters to log. Ignoring result",MessageType.WARNING)
+                return
+
+        # Display in Scientific Notation only for BER resulys
+        if (float(measurement) < 1e-6 and float(measurement) > 0):
+            str_to_log_file = "{},{},{},{:e},{:e},{:.1f}\n".format(testindex, result, testname, highlim, measurement, lowlim)
+        else:
+            str_to_log_file = "{},{},{},{:.4f},{:.4f},{:.4f}\n".format(testindex, result, testname, highlim, measurement, lowlim)
         # Log the line to file
         self.resultsfile.write(str_to_log_file)
         pass
 
     def logresult_nonnumeric(self, testindex:int, result:str, testname:str, expected_data:str, read_data:str):
+        # Print formatted to console
+        self.print_nonnumeric_console(testindex, result, testname, expected_data, read_data)
+        # Log to file
+        self.log_nonnumeric_tofile(testindex, result, testname, expected_data, read_data)
+        pass
+
+    def print_nonnumeric_console(self, testindex:int, result:str, testname:str, expected_data:str, read_data:str):
         # Format the result to Green or Red for pass or fail
         result = self.format_test_for_console(result)
         # Display to console in Tab Separated format
         str_to_log = "{}\t{}\t{}\tExp: {}\tRead: {}".format(testindex, result, testname, expected_data, read_data)
         print(str_to_log)
+        pass
+
+    def log_nonnumeric_tofile(self, inputlist:list = None, testindex = 0, result:str = "P/F", testname:str = "TESTNAME", expected_data:str = "DATA", read_data:str = "DATA"):
+        # All parameters passed as list:
+        if (inputlist != None):
+            try:
+                testindex = inputlist[0]
+                result = inputlist[1]
+                testname = inputlist[2]
+                expected_data = inputlist[3]
+                read_data = inputlist[4]          
+            except:
+                self.print_message("Wrong List of Parameters to log. Ignoring result",MessageType.WARNING)
+                return
         # log to results file in comma separated
         str_to_log = "{},{},{},Exp: {},Read: {},NonNumeric\n".format(testindex, result, testname, expected_data, read_data)
         self.resultsfile.write(str_to_log)
+        pass
+
 
     # Print to console with text characters
     def print_message(self, message:str, mesg_type:MessageType, logtofile:bool = False):
@@ -148,6 +209,19 @@ class LOG_Manager():
         if (logtofile):
             self.logfile.write(message_to_print+message + "\n") # Append new Line
         pass
+
+    def print_led_menu(self):
+        # Prints a fixed menu to the console for the LED test
+        # create colored messages
+        flash = f"{MessageType.WARNING}[f]{MessageType.ENDC}-Flash"
+        off = f"{MessageType.BOLD}[o]{MessageType.ENDC}-OFF"
+        green = f"{MessageType.OKGREEN}[g]{MessageType.ENDC}-Green"
+        red = f"{MessageType.FAIL}[f]{MessageType.ENDC}-Red"
+        # create the formated string
+        str_to_print = (f"{MessageType.USER}USER INPUT:\t{flash}\t{off}\t{green}\t{red}")
+        # print to console
+        print(str_to_print)
+
 
     # print PASS on Green and FAILs on Red
     def format_test_for_console(self, status:str) -> str:

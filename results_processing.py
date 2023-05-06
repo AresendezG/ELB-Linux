@@ -1,6 +1,8 @@
 import os
 import json
 from log_management import LOG_Manager
+from i2c_types import LedMode
+
 
 class ResultsManager:
 
@@ -9,7 +11,7 @@ class ResultsManager:
     # Create a dict to hold all the test limits
     all_limits:dict
     # Init the limits contained in the Limits file
-    def __init__(self, limits_file:str, results_file_handler:LOG_Manager) -> None:
+    def __init__(self, limits_file:str, log_handler:LOG_Manager) -> None:
         # Validate and load all the results file
         if (os.path.isfile(limits_file)):
             with open(limits_file, 'r') as f:
@@ -18,8 +20,7 @@ class ResultsManager:
             print("ERROR:\tTest Limits File does not exist")
             raise FileNotFoundError
         # This object should've been initialized by the Program manager
-        self.results_log = results_file_handler
-
+        self.log_mgr = log_handler
         pass
     
     
@@ -41,8 +42,13 @@ class ResultsManager:
 
 
     # Will determine if the given bunch of results pass or fail
-    def ProcessResults(self, seqname:str, results: list) -> bool:
+    def ProcessResults(self, seqname:str, results: list) -> list:
         seq_result = True
+        # Each step of the sequence will be a PASS (true) or FAIL (false)
+        step_result_list = []
+        # Each step will create a list with the test name, result, test type, etc
+        log_results_list = []
+        test_counter = self.test_counter
         # get the list of results for this group of tests from the JSON limits file
         try:
             # Find if this group of tests has a defined group of limits
@@ -51,37 +57,38 @@ class ResultsManager:
                 try:
                     # Get individual test limits based on the test name
                     test_limits = seq_limits_list[results[item][0]]
-                    # if the giving result is enabled to be reported and its a numeric result
+                    # This step is enabled to be reported and its a numeric result
                     if (test_limits['report'] and test_limits['numeric']):
                         # Determine if measurements is within limits
                         test_status = self.__DetermineTestStatus(test_limits['high_limit'],results[item][1],test_limits['low_limit'])
                         # Log a new line to the results file
-                        self.results_log.logresult(self.test_counter,test_status[0],test_limits['test_name'],test_limits['high_limit'],results[item][1],test_limits['low_limit'])
-                        # This will change to FAIL if the measurement is not within limits
+                        self.log_mgr.print_numeric_console(self.test_counter,test_status[0],test_limits['test_name'],test_limits['high_limit'],results[item][1],test_limits['low_limit'])
+                        log_line = ["NUM", self.test_counter,test_status[0],test_limits['test_name'],test_limits['high_limit'],results[item][1],test_limits['low_limit']]
+                    # This step is enabled for report and non-numeric result
                     elif (test_limits['report'] and (not test_limits['numeric'])):
                         # Determine a pass or fail for non_numeric checks
                         test_status = self.__DetermineStatus_NonNumeric(test_limits['expected_data'], results[item][1])
                         # Log a non-numeric to the results file
-                        self.results_log.logresult_nonnumeric(self.test_counter,test_status[0],test_limits['test_name'],test_limits['expected_data'],results[item][1])
+                        self.log_mgr.print_nonnumeric_console(self.test_counter,test_status[0],test_limits['test_name'],test_limits['expected_data'],results[item][1])
+                        log_line = ["P/F", self.test_counter,test_status[0],test_limits['test_name'],test_limits['expected_data'],results[item][1]]
                     # Process the next test result and increase counter
-                    seq_result = test_status[1]
+                    step_result_list.append(test_status[1])
                     item = item+1
                     self.test_counter = self.test_counter+1
+                    log_results_list.append(log_line)
                 except:
                     print("ERROR:\tNo Test Limit defined for {}".format(results[item][0]))
         except:
             print("Warning:\tSequence {} has no defined Test Limits".format(seqname))
-        return seq_result
-
-    def Validate_UUT_Serial(self, uut_serial:str, expected_serial:str) -> bool:
-        result = True
-        if (uut_serial == expected_serial):
-            self.results_log.logresult("UUT Serial,{}".format(uut_serial))
-        else:
-            print("Fail:\Wrong Serial Number\tExpected: {}\tRead: {}".format(expected_serial, uut_serial))
-            result = False
-        return result
-    
+        
+        # Determine the status of the sequence if all of the steps passed or not
+        seq_result = all(step_result_list)
+        # If the test failed, reset the counter as this result might not be logged
+        if (not seq_result):
+            self.test_counter = test_counter
+        # Return the sequence result, and a list with the log lines. The program mgr will decide if this list is logged or not
+        return [seq_result, log_results_list]
+        
 
     # trim strings to max of 16 characters
     def trim_str(inputstr:str, size:int) -> str:
@@ -143,3 +150,4 @@ class ResultsManager:
         self.all_limits.update(serialnum_dict)
         return self.all_limits
     
+

@@ -1,4 +1,5 @@
 import time
+import random
 from results_processing import ResultsManager as FormatSN
 from i2c_types import GPIO_PINS
 from gpio_ctrl import GPIO_CONTROL
@@ -95,6 +96,27 @@ class ELB_i2c:
         retdata = [x for x in retdata]
         gpio_status = retdata[0]&elb_pin[1]
         return gpio_status
+    
+    def __led_user_input(self) -> LedMode:
+
+        print("Inspect the LED and input the corresponding option:")
+        self.log_mgr.print_led_menu()
+        print("Press c to fail the test")
+        u_input = input("Select: ")
+        while (u_input != 'c'):
+            if (u_input.lower() == 'f'):
+                return LedMode.BOTH_FLASH
+            if (u_input.lower() == 'o'):
+                return LedMode.LED_OFF
+            if (u_input.lower() == 'g'):
+                return LedMode.GREEN_ON
+            if (u_input.lower() == 'r'):
+                return LedMode.RED_ON
+            print('Wrong Option Selected. Press c to Fail the test')
+            self.log_mgr.print_led_menu()
+              
+        return LedMode.BOTH_ON
+        
 
     def __collect_prbs_results(self) -> list:
         self.log_mgr.print_message("Report PRBS Results", MessageType.EVENT)
@@ -147,6 +169,7 @@ class ELB_i2c:
     
     def write_uut_sn(self, serial: str, part_number: str, rev: str):
         self.log_mgr.print_message("Writing SN to ELB", MessageType.EVENT)
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # write password
         self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 16, 17])
         # write page 0
@@ -244,7 +267,7 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 143, [0x00])
         return results
 
-    def leds_verification(self):
+    def leds_verification_static(self):
         self.log_mgr.print_message("Running LED Sequence", MessageType.EVENT)
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
@@ -255,7 +278,35 @@ class ELB_i2c:
         time.sleep(5)
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.RED_ON)
         time.sleep(5)
-        #self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
+        self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
+
+    def leds_verification_random(self) -> list:
+        self.log_mgr.print_message("Running LED Sequence Interactive", MessageType.EVENT)
+        seq_results = []
+        print("Sequence Interactive Mode. Operator Input Required")
+        # write page 3
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
+
+        # create a list of possible LED behaviors
+        led_possible_status = [[LedMode.LED_OFF,"led_off"], [LedMode.GREEN_ON,"led_green"], [LedMode.RED_ON,"led_red"], [LedMode.BOTH_FLASH,"led_flash"]]
+        # Shuffle the possible states 
+        random.shuffle(led_possible_status)
+
+        for status in range(len(led_possible_status)):
+            # Change status of the LED
+            self.bus.write_i2c_block_data(self.DEV_ADD, 129, led_possible_status[status][0])
+            user_input = self.__led_user_input()
+            # Ask the user to inspect the LED
+            if (user_input == led_possible_status[status][0]):
+                result = "PASS"
+            else:
+                result = "FAIL"
+            self.log_mgr.logtofile(f"LED Test {led_possible_status[status][1]} User Input: {user_input} Expected: {led_possible_status[status][0]}")
+            # Append result for each of the possible status to the results list
+            seq_results.append([led_possible_status[status][1], result])
+        # Turn off LED
+        self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
+        return seq_results
 
     def volt_sensors(self) -> list:
         self.log_mgr.print_message("Voltage Sensor Reading", MessageType.EVENT)
@@ -399,9 +450,9 @@ class ELB_i2c:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 138, 1)
         retdata = [x for x in retdata]
         hostchklol = retdata[0]
-        print("host chk lol 0x{:2x}\n".format(hostchklol))
+        print("host check lol 0x{:2x}\n".format(hostchklol))
         self.prbs_started = True
-        return [None]
+        return ["host_check", hostchklol]
 
     def prbs_results(self) -> list:
         # Can only return valid data if the PRBS has started previously

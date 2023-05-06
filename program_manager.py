@@ -128,17 +128,30 @@ class ProgramControl:
         # Wait 2 seconds to sync up 
         time.sleep(2)
     
-    def __RunTest(self, test_fnc:object, retries:int, test_name:str):
+    def __RunTest(self, test_fnc:object, retries:int, test_name:str) -> bool:
         
         for i in range(retries):
             results = test_fnc()
-            self.results_mgr.ProcessResults(test_name, results)
-        pass
+            processed_results = self.results_mgr.ProcessResults(test_name, results)
+            # If result of the sequence is pass, then log and exit
+            if (processed_results[0]):
+                self.log_mgr.log_sequence_results(processed_results[1])
+                # This sequence passed, thus returing to program
+                return True
+            if (i < retries-1):
+                self.log_mgr.print_message(f"Failed {test_name}. Retry: {i+1}", MessageType.WARNING) 
+            # If not, still log the results at the last attempt
+            else:
+                self.log_mgr.print_message(f"Failed {test_name}. No More Retries", MessageType.FAIL) 
+                self.log_mgr.log_sequence_results(processed_results[1])
+        # Sequence ran out of retries, returning false
+        return False
     
-    def run_program(self):
+    def run_program(self) -> bool:
         # Run Detection check
         self.log_mgr.logtofile("Event:\tRunning Detection")
         uut_detection = self.gpioctrl.detect_uut(180)
+        overall_result = True
         if uut_detection:
             self.log_mgr.logtofile("UUT Detected. Running FW Upgrade")
             # Firmware Upgrade and SN Programming will execute first
@@ -151,10 +164,15 @@ class ProgramControl:
                 # Read the testname from the xml config
                 test_name = test['test_name']
                 retries = int(test['retries'])
+                flow_ctrl = test['flow']
                 # get a reference of the test to be run    
                 try:
                     test_fnc_ref = getattr(self.i2c_comm, test_name)
-                    results = self.__RunTest(test_fnc_ref, retries, test_name)
+                    seqresult = self.__RunTest(test_fnc_ref, retries, test_name)
+                    # If sequence failed, and seqconfig is not configd to continue, stop execution
+                    if (not seqresult and flow_ctrl != "cont"):
+                        self.log_mgr.print_message(f"FAILURE at {test_name}. Stopping Execution", MessageType.FAIL)
+                        return False
                     time.sleep(self.time_between_seq) 
                 except AttributeError:
                     #print("ERROR:\t Unable to find Test: {}".format(test_name))

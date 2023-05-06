@@ -3,6 +3,9 @@
     <step name="uut_serial_num">
         <config retries="1" flow="cont"/>
     </step>
+    <step name="leds_verification_random">
+        <config retries="3" flow="cont"/>
+    </step>
     <step name="uut_fw_version">
         <config retries="1" flow="cont"/>
     </step>    
@@ -13,7 +16,7 @@
         <config retries="1" flow="cont"/>
     </step>
     <step name="power_loads">
-        <config retries="1" flow="cont"/>
+        <config retries="3" flow="cont"/>
     </step>     
     <step name="prbs_start">
         <config retries="1" flow="cont"/>
@@ -21,9 +24,7 @@
     <step name="gpio_all">
         <config retries="1" flow="cont"/>
     </step>    
-    <step name="leds_verification">
-        <config retries="1" flow="cont"/>
-    </step>
+
     <step name="epps_signal">
         <config retries="1" flow="cont"/>
     </step>

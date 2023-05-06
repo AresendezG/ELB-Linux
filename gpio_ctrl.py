@@ -81,7 +81,7 @@ class GPIO_CONTROL:
             detected = self.read_gpio(GPIO_PINS.INT_L)
             counter = counter + 1
             time.sleep(0.25)
-        if self.read_gpio(GPIO_PINS.INT_L) != 0:
+        if (counter >= timeout_ctr):
             self.log_mgr.print_message("FAIL: ELB Not Detected before Timeout Expired!", MessageType.FAIL)
             return False
         else:
