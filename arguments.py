@@ -1,3 +1,5 @@
+from log_management import MessageType
+
 class ArgumentsProcess:
 
     # define default names for the config files
@@ -41,9 +43,47 @@ class ArgumentsProcess:
                 print("Wrong Settings on the UUT Information. Try Again.")
                 raise IndexError
         else:
-            print("Pass the following arguments -u [UUTSN] [UUT-PN] [UUT-REV]")
-            raise IndexError
+            print("Warning:\t No UUT info, User needs to Scan UUT")
+            [uut_sn, uut_pn, uut_rv, valid_sn] = self.scan_uut()
+            if (valid_sn):
+                return [uut_sn, uut_pn, uut_rv]
+            else:
+                print("ERROR:\t User Cancelled execution")
+                raise IndexError
         pass
+
+    # receives an input string, and returns the second element after the split
+    def __split_return_after(self, input_str:str, splitchar:str) -> str:
+        elementsin_str = input_str.split(splitchar)
+        return elementsin_str[1]
+
+    def __find_str(self, input_array:list, expected:str) -> int:
+        for index in range(len(input_array)):
+            if (input_array[index].__contains__(expected)):
+                return index
+        return -1
+    
+
+    def scan_uut(self) -> list:
+        user_input = "NONE"        
+        # allow user multiple faiures
+        while (user_input != 'c'):
+            # Read input string using the scanner
+            user_input = input(f"{MessageType.USER}SCAN Bottom UUT Label for SN, REV and PN: >> {MessageType.ENDC}")
+            elements_input = user_input.split(' ')
+            if (len(elements_input) != 3):
+                print("ERROR. Scan Again the Label or type [c] + Enter key to exit")
+            else:                
+                try:
+                    rev_str = self.__split_return_after(elements_input[self.__find_str(elements_input,'Rev:')], ':')
+                    sn_str = self.__split_return_after(elements_input[self.__find_str(elements_input,'SN:')], ':')
+                    pn_str = self.__split_return_after(elements_input[self.__find_str(elements_input,'PN:')], ':')
+                    return [sn_str, pn_str, rev_str, True]
+                except:
+                    print("ERROR. Scan Again the Label or type [c] + Enter key to exit")
+        # User cancelled the execution, return an empty list
+        return [None, None, None, False]
+
 
     def parse_args(self, argv:list) -> list:
         

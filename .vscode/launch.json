@@ -21,6 +21,14 @@
       "console":"integratedTerminal",
    "justMyCode":true
     },
-
+    {    
+        "name":"Scan Label",
+         "type":"python",
+      "request":"launch",
+      "program":"${file}",
+         "args":["-s","seqconfig.xml","-l","limits.json","-x","settings.json"],
+      "console":"integratedTerminal",
+   "justMyCode":true
+    },
     ]
 }

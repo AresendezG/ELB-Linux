@@ -69,7 +69,8 @@ class ELBFirmware:
     def __get_current_fw(self) -> list:
         self.i2cbus = SMBus(self.rpi_i2cbus)
         self.i2cbus.open(self.rpi_i2cbus)
-        time.sleep(0.5)
+        # UUT Readiness
+        time.sleep(2)
         self.i2cbus.write_i2c_block_data(self.i2c_address, 127, [3])
         # Validate retimer host 0x18
         retimer = self.validate_i2c_host_retimer()
