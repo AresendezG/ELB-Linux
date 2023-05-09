@@ -9,10 +9,10 @@ arguments = [
     "configs/limits.json",
     "configs/settings.json"
             ]
-
+Main = ProgramControl(arguments)
 
 # Launch program
 for i in range(10):
-    Main = ProgramControl(arguments)
+    
     result = Main.run_program()
     print(f"Execution {i} Result: {result}")

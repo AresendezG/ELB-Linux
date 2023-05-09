@@ -10,7 +10,7 @@ __pycache__/
 test_results/
 
 # ignore special config files
-configs/
+debugconfigs/
 
 # Distribution / packaging
 .Python

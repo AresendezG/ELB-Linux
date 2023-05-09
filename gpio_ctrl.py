@@ -42,7 +42,7 @@ class GPIO_CONTROL:
         #self.p.stop()
         time.sleep(2)
         # Reset the GPIO config
-        # GPIO.cleanup()
+        GPIO.cleanup()
     
     def read_gpio(self, pin: GPIO_PINS) -> bool:
         status = GPIO.input(pin)
