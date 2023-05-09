@@ -40,6 +40,10 @@ class ELB_i2c:
         self.DEV_ADD = i2c_add
         pass
     
+    # Cleanup
+    def __del__(self):
+        self.uut_cleanup()
+
     #----- Individual Steps
 
     # Function to test the temperature 
@@ -118,6 +122,24 @@ class ELB_i2c:
         return LedMode.BOTH_ON
         
 
+    def __disable_prbs(self):
+        print("Event:\t Shutdown PRBS")
+        # write page 0x13
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
+        # disable host side gen
+        self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
+        # disable host side chk
+        self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
+        pass
+
+    def __reset_powerloads(self):
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x03])
+        print("Event: \tSet Loads OFF and LowPower Mode")
+        self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x30])
+        self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
+        pass
+
+
     def __collect_prbs_results(self) -> list:
         self.log_mgr.print_message("Report PRBS Results", MessageType.EVENT)
         lol_status = [-1] * 8
@@ -138,12 +160,7 @@ class ELB_i2c:
         hostchkber = [0.0] * 8
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 192, 16)
         retdata = [x for x in retdata]
-        # write page 0x13
-        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
-        # disable host side gen
-        self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
-        # disable host side chk
-        self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
+
         for ln in range(8):
             u16 = (retdata[ln*2] << 8) | retdata[(ln*2)+1]
             s = (u16 & 0xf800)>>11
@@ -156,12 +173,6 @@ class ELB_i2c:
             print("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln][1],retdata[ln*2],retdata[(ln*2)+1],man,s))
             lol_status[ln] = ["LOL_{}".format(ln), hostchklol & (1<<ln)]
             
-        # write page 0x13
-        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x13])
-        # disable host side gen
-        self.bus.write_i2c_block_data(self.DEV_ADD, 144, [0x00])
-        # disable host side chk
-        self.bus.write_i2c_block_data(self.DEV_ADD, 160, [0x00])
         # Return a single list
         return (lol_status + hostchkber)
 
@@ -461,8 +472,8 @@ class ELB_i2c:
         else:
             print("Warning: \tNo Previous PRBS Start. Starting it now")
             self.prbs_start()
-            print("Event:\tWaiting 20 seconds for PRBS Results")
-            time.sleep(20)
+            print("Event:\tWaiting 60 seconds for PRBS Results")
+            time.sleep(60)
             prbs_results = self.__collect_prbs_results()        
         return prbs_results
 
@@ -500,5 +511,13 @@ class ELB_i2c:
                     ["i_tx_4p0",i_vcc_tx_4p0], ["i_tx_0p8",i_vcc_tx_0p8], ["i_tx_1p6",i_vcc_tx_1p6], ["i_tx_3p2",i_vcc_tx_3p2]]        
         return currents
 
+    def uut_cleanup(self) -> list:
+        self.log_mgr.print_message("UUT Cleanup Load Test", MessageType.EVENT)
+        try:
+            self.__disable_prbs()
+            self.__reset_powerloads()
+        except:
+            self.log_mgr.print_message("UUT Cleanup Failed. Verify system before Testing", MessageType.FAIL)
+        pass
 
 

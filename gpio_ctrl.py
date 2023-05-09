@@ -14,8 +14,6 @@ class GPIO_CONTROL:
     def __init__(self, log_handler: LOG_Manager) -> None:
         # Define GPIO map
         GPIO.setmode(GPIO.BCM)
-        # Reset the GPIO config
-        GPIO.cleanup()
         # Disable channel warning
         GPIO.setwarnings(False)
         # Define inputs for the RPI and Outs for the ELB
@@ -32,8 +30,8 @@ class GPIO_CONTROL:
         self.log_mgr.print_message("Configured the GPIOs to default",MessageType.WARNING)
 
         GPIO.setup(17, GPIO.OUT)
-        self.p = GPIO.PWM(17, 1)  # channel=17 1Hz to create the PPS
-        self.p.start(0)
+        #self.p = GPIO.PWM(17, 1)  # channel=17 1Hz to create the PPS
+        #self.p.start(0)
         print("MSG: Configured the PPS")
         time.sleep(2)
         pass
@@ -41,8 +39,10 @@ class GPIO_CONTROL:
     def __del__(self):
         self.log_mgr.print_message("Cleaning GPIO Config", MessageType.WARNING)
         self.config_pins_todefault()
-        self.p.stop()
+        #self.p.stop()
         time.sleep(2)
+        # Reset the GPIO config
+        # GPIO.cleanup()
     
     def read_gpio(self, pin: GPIO_PINS) -> bool:
         status = GPIO.input(pin)
