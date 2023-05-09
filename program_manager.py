@@ -59,12 +59,12 @@ class ProgramControl:
             raise FileExistsError
         else:
             # Define all of the input parameters
-            self.sn = self.input_args[1]
-            self.rev = self.input_args[2]
-            self.partnum = self.input_args[3]
-            self.seq_file = self.input_args[4]
-            self.limits_file = self.input_args[5]
-            self.config_file = self.input_args[6]
+            self.sn = self.input_args[0]
+            self.rev = self.input_args[1]
+            self.partnum = self.input_args[2]
+            self.seq_file = self.input_args[3]
+            self.limits_file = self.input_args[4]
+            self.config_file = self.input_args[5]
             # Read the settings from the Json file
             self.__Read_Settings()
         return
