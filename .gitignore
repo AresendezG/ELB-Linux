@@ -9,6 +9,9 @@ __pycache__/
 # ignore the logfiles created by this script
 test_results/
 
+# ignore special config files
+configs/
+
 # Distribution / packaging
 .Python
 build/
