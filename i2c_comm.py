@@ -121,7 +121,6 @@ class ELB_i2c:
               
         return LedMode.BOTH_ON
         
-
     def __disable_prbs(self):
         print("Event:\t Shutdown PRBS")
         # write page 0x13
@@ -138,7 +137,6 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x30])
         self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
         pass
-
 
     def __collect_prbs_results(self) -> list:
         self.log_mgr.print_message("Report PRBS Results", MessageType.EVENT)
@@ -292,7 +290,7 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
 
     def leds_verification_random(self) -> list:
-        self.log_mgr.print_message("Running LED Sequence Interactive", MessageType.EVENT)
+        self.log_mgr.print_message("Running LED Sequence Interactive", MessageType.EVENT, True)
         seq_results = []
         print("Sequence Interactive Mode. Operator Input Required")
         # write page 3
@@ -320,7 +318,7 @@ class ELB_i2c:
         return seq_results
 
     def volt_sensors(self) -> list:
-        self.log_mgr.print_message("Voltage Sensor Reading", MessageType.EVENT)
+        self.log_mgr.print_message("Voltage Sensor Reading", MessageType.EVENT, True)
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         vcc = self.__ReadVoltageFnc(VoltageSensors.VCC)
@@ -334,7 +332,7 @@ class ELB_i2c:
         return [["vcc",vcc], ["vcc_tx",vcctx], ["vcc_rx",vccrx], ["vbatt",vbatt]]
 
     def temp_sensors(self) -> list:
-        self.log_mgr.print_message("Temp Sensors Reading",MessageType.EVENT)
+        self.log_mgr.print_message("Temp Sensors Reading",MessageType.EVENT, True)
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         uc_temp = self.__ReadTempFnc(TempSensors.UC)
@@ -352,7 +350,7 @@ class ELB_i2c:
         return [["uc_temp",uc_temp], ["retimer_temp",rt_temp], ["pcb_rt",pcb_rt_temp], ["pcb_pl",pcb_pl_temp], ["shell_f",shell_f_temp], ["shell_r",shell_r_temp]]  
     
     def epps_signal(self) -> list:
-        self.log_mgr.print_message("Measuring ePPS Signal",MessageType.EVENT)
+        self.log_mgr.print_message("Measuring ePPS Signal",MessageType.EVENT, True)
         # write page 3
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # ePPS Start capture:
@@ -369,7 +367,7 @@ class ELB_i2c:
         return [["freq",freq], ["duty_percent",duty_percent], ["duty_ms",duty_ms]]
 
     def uut_serial_num(self) -> list:
-        self.log_mgr.print_message("Readback of UUT SN", MessageType.EVENT)
+        self.log_mgr.print_message("Readback of UUT SN", MessageType.EVENT, True)
         # write page 0
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
         # read SN from reg166  
@@ -392,7 +390,7 @@ class ELB_i2c:
         return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["partnum2", pn2_str]]
     
     def ins_count(self) -> list:
-        self.log_mgr.print_message("Insertion Counter", MessageType.EVENT)
+        self.log_mgr.print_message("Insertion Counter", MessageType.EVENT, True)
         # Read the insertion counter
         # write page 0x03
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x03])
@@ -415,7 +413,7 @@ class ELB_i2c:
             self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
             self.high_power = True
         # start prbs!!!!!!!!!!!!!!!!!!!!
-        self.log_mgr.print_message("Start of PRBS", MessageType.EVENT)
+        self.log_mgr.print_message("Start of PRBS", MessageType.EVENT, True)
         # write page 0x10
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0x10])
         # Write command to set mod mode
@@ -478,7 +476,7 @@ class ELB_i2c:
         return prbs_results
 
     def power_loads(self) -> list:
-        self.log_mgr.print_message("Power Load Test", MessageType.EVENT)
+        self.log_mgr.print_message("Power Load Test", MessageType.EVENT, True)
         # load/current all on/off
         # all loads off
         # put in low power mode
@@ -512,12 +510,12 @@ class ELB_i2c:
         return currents
 
     def uut_cleanup(self) -> list:
-        self.log_mgr.print_message("UUT Cleanup Load Test", MessageType.EVENT)
+        self.log_mgr.print_message("UUT Cleanup", MessageType.EVENT, True)
         try:
             self.__disable_prbs()
             self.__reset_powerloads()
         except:
-            self.log_mgr.print_message("UUT Cleanup Failed. Verify system before Testing", MessageType.FAIL)
+            self.log_mgr.print_message("UUT Cleanup Failed. Verify system before Testing", MessageType.FAIL, True)
         pass
 
 
