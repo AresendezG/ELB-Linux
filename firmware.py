@@ -121,8 +121,8 @@ class ELBFirmware:
             # Try to upgrade the firmware via OpenOCD and SWD Protocol
             [prog, verify, reset] = self.__fw_upgrade()
             if (prog and verify):
-                # Reboot UUT for 1 seconds
-                self.gpioctrl.reset_uut(2)
+                # Reboot UUT for 3 seconds
+                self.gpioctrl.reset_uut(3)
                 time.sleep(1)
                 # Try to reach the uC again via i2c
                 self.i2cbus.open(self.rpi_i2cbus)

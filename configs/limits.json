@@ -96,7 +96,7 @@
         "fwver":
         {
             "test_name": "FIRMWARE_VERSION",
-            "expected_data": "0.69",
+            "expected_data": "0.71",
             "report":true,
             "numeric":false
         }
