@@ -81,6 +81,22 @@ class ELBFirmware:
         self.log_mgr.print_message("Firmware Version before Upgrade: {}".format(fw_str), MessageType.EVENT, True)
         return [fw_str, retimer]
     
+
+    def __wait_for_retimer(self):
+        print("Wait for Retimer: ")
+        counter = 0
+        timeout = 10
+        # Wait for Retimer to finish upgrade
+        try:
+            retdata = self.i2cbus.read_block_data(self.i2c_address, 3, 1)
+            while (retdata[0] & 0x0e and counter < timeout) == 0:
+                GPIO_CONTROL.wait_effect(1)
+                retdata = self.i2cbus.read_block_data(self.i2c_address, 3, 1)
+                ++timeout
+        except:
+            return
+
+
     # Requires the settings file to determine the filename of the FW to upgrade
     def __fw_upgrade(self) -> list:
         # OpenOCD Command example (pending to change the interface)
@@ -129,12 +145,8 @@ class ELBFirmware:
                 self.i2cbus.open(self.rpi_i2cbus)
                 print("Opening i2c Bus after Upgrade")
                 GPIO_CONTROL.wait_effect(10)
-                # Wait for Retimer to finish upgrade
-                retdata = self.i2cbus.read_block_data(self.i2c_address, 3, 1)
-                while (retdata[0] & 0x0e) == 0:
-                        print("Waiting for Retimer Upgrade")
-                        time.sleep(1)
-                        retdata = self.i2cbus.read_block_data(self.i2c_address, 3, 1)
+                # wait for retimer to be ready
+                self.__wait_for_retimer()
                 # Read new FW Version
                 [fw_str, retimer] = self.__get_current_fw()
             else:
