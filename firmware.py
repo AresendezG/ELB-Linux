@@ -116,18 +116,25 @@ class ELBFirmware:
         [fw_str, retimer] = self.__get_current_fw()
         self.old_fw = fw_str
         if (fw_str != self.expected_fw):
-            # FW Missmatch, trying to upgrade
+            # FW Missmatch, trying to upgrade:
             self.i2cbus.close()
             # Try to upgrade the firmware via OpenOCD and SWD Protocol
             [prog, verify, reset] = self.__fw_upgrade()
             if (prog and verify):
                 # Hold the reset pin for at least 2 seconds
                 self.gpioctrl.reset_uut(2)
-                # Needs at least 15 seconds to fully upgrade
-                GPIO_CONTROL.wait_effect(15)
+                # Needs at least 10 seconds to fully upgrade
+                GPIO_CONTROL.wait_effect(10)
                 # Try to reach the uC again via i2c
                 self.i2cbus.open(self.rpi_i2cbus)
-                time.sleep(1)
+                print("Opening i2c Bus after Upgrade")
+                GPIO_CONTROL.wait_effect(10)
+                # Wait for Retimer to finish upgrade
+                retdata = self.i2cbus.read_block_data(self.i2c_address, 3, 1)
+                while (retdata[0] & 0x0e) == 0:
+                        print("Waiting for Retimer Upgrade")
+                        time.sleep(1)
+                        retdata = self.i2cbus.read_block_data(self.i2c_address, 3, 1)
                 # Read new FW Version
                 [fw_str, retimer] = self.__get_current_fw()
             else:
