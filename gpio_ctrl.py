@@ -87,11 +87,12 @@ class GPIO_CONTROL:
         else:
             return True
         
-    def wait_effect(timeout:int):
+    def wait_effect(timeout:int, printmsg:bool = True):
         spinner = itertools.cycle(['-', '/', '|', '\\'])
         counter = 0
         timeout_total = timeout*4
-        print(f"Wait for: {timeout} Seconds")
+        if (printmsg):
+            print(f"Wait for: {timeout} Seconds")
         while(counter < timeout_total):
             sys.stdout.write(next(spinner))   
             sys.stdout.flush()                

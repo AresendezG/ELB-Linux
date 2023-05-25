@@ -90,9 +90,10 @@ class ELBFirmware:
         try:
             retdata = self.i2cbus.read_block_data(self.i2c_address, 3, 1)
             while (retdata[0] & 0x0e and counter < timeout) == 0:
-                GPIO_CONTROL.wait_effect(1)
+                GPIO_CONTROL.wait_effect(timeout=1, printmsg=False)
                 retdata = self.i2cbus.read_block_data(self.i2c_address, 3, 1)
-                ++timeout
+                print(retdata[0])
+                ++counter
         except:
             return
 
