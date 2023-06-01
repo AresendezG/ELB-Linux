@@ -125,9 +125,9 @@ class ResultsManager:
         # Update the keys in the ALL LIMITS read from the json file 
         try:
             # keys for the programming uut-sn sequence
-            updated_all_limits['prog_uut_sn']['step_list']['serial']['expected_data'] = uut_serial
-            updated_all_limits['prog_uut_sn']['step_list']['partnum']['expected_data'] = uut_pn
-            updated_all_limits['prog_uut_sn']['step_list']['rev']['expected_data'] = uut_rev
+            updated_all_limits['prog_uut_sn']['step_list']['prog_serial']['expected_data'] = uut_serial
+            updated_all_limits['prog_uut_sn']['step_list']['prog_partnum']['expected_data'] = uut_pn
+            updated_all_limits['prog_uut_sn']['step_list']['prog_rev']['expected_data'] = uut_rev
             # keys for the read sn sequence 
             updated_all_limits['uut_serial_num']['step_list']['serial']['expected_data'] = uut_serial_formatted
             updated_all_limits['uut_serial_num']['step_list']['part_num']['expected_data'] = uut_pn_formatted

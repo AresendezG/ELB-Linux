@@ -222,7 +222,7 @@ class ELB_i2c:
             self.log_mgr.print_message(f"New SN: {self.serial}", MessageType.EVENT, True)
             self.log_mgr.print_message(f"Revision {self.rev}", MessageType.EVENT, True)
             self.log_mgr.print_message(f"Part Number: {self.part_number}", MessageType.EVENT, True)
-            return [["old_sn", old_sn_str],["serial", self.serial],["partnum", self.part_number],["rev", self.rev]]
+            return [["old_sn", old_sn_str],["prog_serial", self.serial],["prog_partnum", self.part_number],["prog_rev", self.rev]]
         else:
             print("Error: Serial Number not been defined")
             raise KeyError
@@ -248,7 +248,7 @@ class ELB_i2c:
         pn2 = [x for x in retdata] # array that holds the rev number
         pn2_str = "".join(chr(x) for x in pn2)
         #print("Serial Number: "+serial_str)
-        return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["partnum2", pn2_str]]
+        return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["pn2_str", pn2_str]]
     
     
     def write_uut_sn(self, serial: str, part_number: str, rev: str):
