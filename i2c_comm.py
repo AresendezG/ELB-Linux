@@ -1,5 +1,6 @@
 import time
 import random
+import itertools
 from results_processing import ResultsManager as FormatSN
 from i2c_types import GPIO_PINS
 from gpio_ctrl import GPIO_CONTROL
@@ -8,6 +9,7 @@ from i2c_types import CurrentSensors, TempSensors, VoltageSensors
 from log_management import LOG_Manager, MessageType
 from firmware import ELBFirmware
 from smbus2 import SMBus
+
 
 
 class ELB_i2c:
@@ -25,6 +27,9 @@ class ELB_i2c:
     # Determine if UUT has started the PRBS Routine
     prbs_started = False
     cleanup_run = False
+
+    # interactive 
+    led_status = itertools.cycle([[LedMode.GREEN_ON, "LED GREEN ON"], [LedMode.RED_FLASH, "LED FLASH MODE"], [LedMode.RED_ON, "LED RED ON"], [LedMode.LED_OFF, "LED OFF"]])
 
     # UUT Variables
     serial = ""
@@ -220,7 +225,7 @@ class ELB_i2c:
                 self.log_mgr.print_message("Old UUT SN: {}".format(old_sn_str), MessageType.WARNING, True)
             self.write_uut_sn(self.serial, self.part_number, self.rev)
             self.log_mgr.print_message(f"New SN: {self.serial}", MessageType.EVENT, True)
-            self.log_mgr.print_message(f"Revision {self.rev}", MessageType.EVENT, True)
+            self.log_mgr.print_message(f"Revision: {self.rev}", MessageType.EVENT, True)
             self.log_mgr.print_message(f"Part Number: {self.part_number}", MessageType.EVENT, True)
             return [["old_sn", old_sn_str],["prog_serial", self.serial],["prog_partnum", self.part_number],["prog_rev", self.rev]]
         else:
@@ -247,7 +252,7 @@ class ELB_i2c:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 224, 18)
         pn2 = [x for x in retdata] # array that holds the rev number
         pn2_str = "".join(chr(x) for x in pn2)
-        #print("Serial Number: "+serial_str)
+        print("Part_Number2 : "+pn2_str)
         return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["pn2_str", pn2_str]]
     
     
@@ -278,6 +283,7 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 164, rev_hex)
         # Format PartNumber 2 (includes rev) and return a list of bytes
         pn2_hex = FormatSN.create_pn2(part_number, rev)
+        print(pn2_hex)
         self.bus.write_i2c_block_data(self.DEV_ADD, 224, pn2_hex) 
         # save sn, write password
         self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 0, 16])
@@ -392,6 +398,16 @@ class ELB_i2c:
         # Turn off LED
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
         return seq_results
+
+
+    def led_remote(self) -> list:
+        current_led_status = next(self.led_status)
+        # Enable cms
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
+        # flash LEDs
+        self.bus.write_i2c_block_data(self.DEV_ADD, 129, current_led_status[0])
+        return ["LED", current_led_status[1]]
+
 
     def volt_sensors(self) -> list:
         self.log_mgr.print_message("Voltage Sensor Reading", MessageType.EVENT, True)
@@ -514,7 +530,7 @@ class ELB_i2c:
         hostchklol = retdata[0]
         print("host check lol 0x{:2x}\n".format(hostchklol))
         self.prbs_started = True
-        return ["host_check", hostchklol]
+        return ["host_check", int(hostchklol)]
 
     def prbs_results(self) -> list:
         # Can only return valid data if the PRBS has started previously

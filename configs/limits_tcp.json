@@ -247,9 +247,9 @@
                 "report":true,
                 "numeric":false
             },
-            "led_green_off":
+            "led_flash_on":
             {
-                "test_name": "LED GREEN OFF",
+                "test_name": "LED FLASH MODE",
                 "expected_data": "PASS",
                 "report":true,
                 "numeric":false
@@ -261,9 +261,9 @@
                 "report":true,
                 "numeric":false
             },
-            "led_red_off":
+            "led_off":
             {
-                "test_name": "LED RED OFF",
+                "test_name": "LED OFF",
                 "expected_data": "PASS",
                 "report":true,
                 "numeric":false
@@ -497,6 +497,15 @@
                 "high_limit": 0,
                 "unit": "nA",
                 "report":true,
+                "numeric":true
+            },
+            "prbs_run":
+            {
+                "test_name": "PRBS RUNNING",
+                "low_limit": 0,
+                "high_limit": 0,
+                "unit": "nA",
+                "report":false,
                 "numeric":true
             }
         },
