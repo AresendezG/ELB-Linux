@@ -105,33 +105,6 @@ class ProgramControl:
         except:
             self.log_mgr.print_message(f"Unable to read Sequence JSON File {self.limits_file}. Stopping Execution", MessageType.FAIL, True)
             raise RuntimeError
-
-    # Fnc to handle the firmware upgrade of the UUT
-    def __FirmwareUpgrade(self):
-        self.log_mgr.print_message("Firmware Programming", MessageType.EVENT, True)
-        fwhandler = ELBFirmware(self.config_file, self.gpioctrl, self.log_mgr)
-        # Verify the firmware version and try to upgrade it
-        [fw_ver, retimer] = fwhandler.fw_verification()
-        self.log_mgr.log_to_file("FW Version Before Upgrade: {}".format(fwhandler.old_fw))
-        self.log_mgr.log_to_file("FW Version After Upgrade: {}".format(fw_ver))
-        self.log_mgr.log_to_file("Retimer HostAddress: {}".format(retimer))
-    
-    def __Program_UUT_SN(self):
-        self.log_mgr.print_message("Serial Number Programming", MessageType.WARNING, True)
-        # Read the old SN (if any)
-        old_uut_data = self.i2c_comm.uut_serial_num()
-        old_sn_str:str
-        old_sn_str = old_uut_data[0][1]
-        # Data in the SN register is Juniper format, thus this is a re-test
-        if (old_sn_str[0:2] == "ZP"):
-            self.log_mgr.print_message("UUT has a valid SN already Programmed", MessageType.WARNING, True)
-            self.log_mgr.print_message("Old UUT SN: {}".format(old_sn_str), MessageType.WARNING, True)
-        self.i2c_comm.write_uut_sn(self.sn, self.partnum, self.rev)
-        self.log_mgr.print_message("New SN: {}".format(self.sn), MessageType.EVENT, True)
-        self.log_mgr.print_message("Revision {}".format(self.rev), MessageType.EVENT, True)
-        self.log_mgr.print_message("Part Number: {}".format(self.partnum), MessageType.EVENT, True)
-        # Wait 2 seconds to sync up 
-        time.sleep(2)
     
     def __RunTest(self, test_fnc:object, retries:int, test_name:str) -> bool:
         
@@ -160,10 +133,11 @@ class ProgramControl:
         if uut_detection:
             self.log_mgr.log_to_file("UUT Detected. Running FW Upgrade")
             # Firmware Upgrade and SN Programming will execute first
-            self.__FirmwareUpgrade()
+            #self.__FirmwareUpgrade()
             # Firmware Upgrade completed or Not required, launch i2c Communication
-            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr)
-            self.__Program_UUT_SN()   
+            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.config_file)
+            self.i2c_comm.define_uut_sn([self.sn, self.partnum, self.rev])
+            #self.__Program_UUT_SN()   
             # For each test in the TestFlow 
             for test in self.test_flow:
                 # Read the testname from the xml config
@@ -175,13 +149,19 @@ class ProgramControl:
                     test_fnc_ref = getattr(self.i2c_comm, test_name)
                     seqresult = self.__RunTest(test_fnc_ref, retries, test_name)
                     # If sequence failed, and seqconfig is not configd to continue, stop execution
-                    if (not seqresult and flow_ctrl != "cont"):
+                    if (not seqresult and not flow_ctrl):
                         self.log_mgr.print_message(f"FAILURE at {test_name}. Stopping Execution", MessageType.FAIL)
+                        self.i2c_comm.uut_cleanup()
                         return False
                     time.sleep(self.time_between_seq) 
                 except AttributeError:
                     #print("ERROR:\t Unable to find Test: {}".format(test_name))
                     self.log_mgr.print_message("Test {} Not Found".format(test_name), MessageType.WARNING, True)
+            self.log_mgr.print_message("All Tests Completed", MessageType.EVENT, True)
+            self.i2c_comm.uut_cleanup()
+            self.gpioctrl.config_pins_todefault()
+            self.log_mgr.close_logs()
+            return seqresult
         else:
             self.log_mgr.print_message("User did not inserted the ELB. No test were executed", MessageType.WARNING, True)
         return

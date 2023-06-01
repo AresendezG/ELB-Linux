@@ -117,9 +117,9 @@ class ResultsManager:
         # copy to local dict to manipulate data
         updated_all_limits = self.all_limits
         # Create same strings as those programmed into the UUT
-        uut_serial = ResultsManager.trim_str(uut_serial, 16) # call is as static fnc
-        uut_pn = ResultsManager.trim_str(uut_pn, 16)
-        uut_rev = ResultsManager.trim_str(uut_rev, 2)
+        uut_serial_formatted = ResultsManager.trim_str(uut_serial, 16) # call is as static fnc
+        uut_pn_formatted = ResultsManager.trim_str(uut_pn, 16)
+        uut_rev_formatted = ResultsManager.trim_str(uut_rev, 2)
         uut_pn2_hex = ResultsManager.create_pn2(uut_pn, uut_rev)
         uut_pn2_str = "".join(chr(x) for x in uut_pn2_hex)
         # Update the keys in the ALL LIMITS read from the json file 
@@ -129,9 +129,9 @@ class ResultsManager:
             updated_all_limits['prog_uut_sn']['step_list']['partnum']['expected_data'] = uut_pn
             updated_all_limits['prog_uut_sn']['step_list']['rev']['expected_data'] = uut_rev
             # keys for the read sn sequence 
-            updated_all_limits['uut_serial_num']['step_list']['serial']['expected_data'] = uut_serial
-            updated_all_limits['uut_serial_num']['step_list']['part_num']['expected_data'] = uut_pn
-            updated_all_limits['uut_serial_num']['step_list']['rev']['expected_data'] = uut_rev
+            updated_all_limits['uut_serial_num']['step_list']['serial']['expected_data'] = uut_serial_formatted
+            updated_all_limits['uut_serial_num']['step_list']['part_num']['expected_data'] = uut_pn_formatted
+            updated_all_limits['uut_serial_num']['step_list']['rev']['expected_data'] = uut_rev_formatted
             updated_all_limits['uut_serial_num']['step_list']['pn2_str']['expected_data'] = uut_pn2_str
             # Update all_limits in this object for future results processing
             self.all_limits = updated_all_limits

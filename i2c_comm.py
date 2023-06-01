@@ -24,6 +24,7 @@ class ELB_i2c:
     high_power = False
     # Determine if UUT has started the PRBS Routine
     prbs_started = False
+    cleanup_run = False
 
     # UUT Variables
     serial = ""
@@ -562,12 +563,17 @@ class ELB_i2c:
         return currents
 
     def uut_cleanup(self) -> list:
-        self.log_mgr.print_message("UUT Cleanup", MessageType.EVENT, True)
-        try:
-            self.__disable_prbs()
-            self.__reset_powerloads()
-        except:
-            self.log_mgr.print_message("UUT Cleanup Failed. Verify system before Testing", MessageType.FAIL, True)
-        pass
+        if (not self.cleanup_run):
+            self.log_mgr.print_message("UUT Cleanup", MessageType.EVENT, True)
+            try:
+                self.__disable_prbs()
+                self.__reset_powerloads()
+                self.cleanup_run = True
+                return ["cleanup", "done"]
+            except:
+                self.log_mgr.print_message("UUT Cleanup Failed. Verify system before Testing", MessageType.FAIL, True)
+            pass
+        else:
+            return [None]
 
 

@@ -1,9 +1,9 @@
 import os
 import json
 from log_management import LOG_Manager, MessageType
-from debug_libs.dummy_i2c_comm import ELB_i2c
+from i2c_comm import ELB_i2c
 from i2c_types import MOD_Rates
-from debug_libs.dummy_gpio import GPIO_CONTROL
+from gpio_ctrl import GPIO_CONTROL
 from results_processing import ResultsManager
 # This class will define how the program flows
 
