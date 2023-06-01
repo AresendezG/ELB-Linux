@@ -530,7 +530,7 @@ class ELB_i2c:
         hostchklol = retdata[0]
         print("host check lol 0x{:2x}\n".format(hostchklol))
         self.prbs_started = True
-        return ["host_check", int(hostchklol)]
+        return [["host_check", int(hostchklol)], ["NDF", None]]
 
     def prbs_results(self) -> list:
         # Can only return valid data if the PRBS has started previously
