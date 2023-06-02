@@ -47,7 +47,9 @@ class tcp_launcher:
         except KeyError:
             port = self.port
             host = self.host
+        print("ELB Test Server Running. Listening on:")
         print(f"port: {port}, host: {host}")
+        print("Waiting for Client Connections")
         inbound_cmd = "NONE_RECEIVED"
         cmd_history = []
         ret_history = []

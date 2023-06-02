@@ -14,6 +14,8 @@ class ProgramControl:
     # Object to handle the i2c communication with UUT
     i2ctests = None
     test_started = False
+    # Variable to check the status of the test result
+    seq_result = False
 
     def __init__(self) -> None:
         pass
@@ -129,7 +131,7 @@ class ProgramControl:
                 # Test is not interactive, run it
                 results = test_fnc_ref()
             if (log_test):
-                [seq_result, log_lines] = self.results_processor.ProcessResults(test_name, results)
+                [self.seq_result, log_lines] = self.results_processor.ProcessResults(test_name, results)
                 # Log the results from this sequence into the results file
                 self.log_mgr.log_sequence_results(log_lines)
             # Returns the raw results to the TCP Client
@@ -151,4 +153,8 @@ class ProgramControl:
         del self.gpioctrl
         del self.i2ctests
         self.test_started = False
-        return "CLEANUP_DONE"
+        # seq_result should be true if none of the sequences failed the test
+        if (self.seq_result):
+            return "PASS"
+        else:
+            return "FAIL"
