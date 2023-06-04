@@ -59,25 +59,24 @@ class ProgramControl:
     def __ValidateArgs(self):
         
         if (len(self.input_args) < 5):
-            print("ERROR: \tWrong Parameter Settings")
-            print("Message: \tTo run this program you need at least 6 parameters")
+            print("ERROR:\tWrong Parameter Settings")
+            print("Message:\tVerify the arguments of Limits File and Config File")
             raise FileExistsError
         else:
             # Define all of the input parameters
             self.sn = self.input_args[0]
             self.rev = self.input_args[1]
             self.partnum = self.input_args[2]
-            self.seq_file = self.input_args[3]
-            self.limits_file = self.input_args[4]
-            self.config_file = self.input_args[5]
+            self.limits_file = self.input_args[3]
+            self.settings_file = self.input_args[4]
             # Read the settings from the Settings.JSON file
             self.__Read_Settings()
         return
     
     # Reading the test settings from the settings.json file
     def __Read_Settings(self):
-        if (os.path.isfile(self.config_file)):
-            with open(self.config_file, 'r') as f:
+        if (os.path.isfile(self.settings_file)):
+            with open(self.settings_file, 'r') as f:
                 settings = json.load(f)
             # Define Mod rate for PRBS
             self.prbs_modrate = getattr(MOD_Rates, settings['modrate'])
@@ -135,7 +134,7 @@ class ProgramControl:
             # Firmware Upgrade and SN Programming will execute first
             #self.__FirmwareUpgrade()
             # Firmware Upgrade completed or Not required, launch i2c Communication
-            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.config_file)
+            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.settings_file)
             self.i2c_comm.define_uut_sn([self.sn, self.partnum, self.rev])
             #self.__Program_UUT_SN()   
             # For each test in the TestFlow 

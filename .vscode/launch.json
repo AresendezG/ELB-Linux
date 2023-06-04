@@ -35,7 +35,7 @@
          "type":"python",
       "request":"launch",
       "program":"${file}",
-         "args":["-s","configs/seqconfig.xml","-l","configs/limits.json","-x","configs/settings.json"],
+         "args":["-s","configs/settings.json","-l","debugconfigs/limits_noprbs.json","-x","configs/seqconfig.xml"],
       "console":"integratedTerminal",
    "justMyCode":true
     },

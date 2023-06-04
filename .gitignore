@@ -13,9 +13,6 @@ test_results/
 debugconfigs/
 debug_libs/
 
-# ignore vscode stuff
-.vscode/
-
 # Distribution / packaging
 .Python
 build/
@@ -137,4 +134,3 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-.vscode/launch.json

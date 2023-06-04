@@ -6,7 +6,6 @@ class UserArguments:
     # Default names for the config files
     def_settings_file = "configs/settings.json"
     def_limits_file = "configs/limits.json"
-    def_seq_file = "configs/seqconfig.xml"
     def_tcp = None
 
     def __init__(self) -> None:
@@ -18,8 +17,6 @@ class UserArguments:
             help="(Optional) /path/tp/settings.json Settings file")
         parser.add_argument('-l', '--limits', type=str, required=False,
             help="(Optional) /path/to/limits.json Custom Test Limits File")
-        parser.add_argument('-x', '--sequence', type=str, required=False,
-            help="(Optional) /path/to/sequence.xml Custom Sequence File to change the execution order")
         parser.add_argument('-t', '--tcpport', type=str, required=False,
             help="(Optional) [portnum] Execute the program listening over the specified TCP port")
         parser.add_argument('-u', '--uuthost', type=str, required=False,
@@ -29,11 +26,10 @@ class UserArguments:
 
         settings = args.settings
         limits = args.limits
-        sequence = args.sequence
         tcpport = args.tcpport
         tcp_host = args.uuthost
 
-        return [settings, limits, sequence, tcpport, tcp_host]
+        return [settings, limits, tcpport, tcp_host]
 
 
     # receives an input string, and returns the second element after the split
@@ -93,18 +89,16 @@ class UserArguments:
     def parse_args(self) -> list:
         
         # Find for settings arg
-        [settings, limits, sequence, tcp_port, tcp_host] = self.__get_user_args()
+        [settings, limits, tcp_port, tcp_host] = self.__get_user_args()
         # Validate settings file:
         settings_file = self.__validate_ext(settings, self.def_settings_file, ".json")
-        # Validate sequence file
-        seq_file = self.__validate_ext(sequence, self.def_seq_file, ".xml")
         limits_file = self.__validate_ext(limits, self.def_limits_file, ".json")
         
         # Request user to scan UUT if the program is running in console mode
         if (tcp_port == None):
             [sn_str, pn_str, rev_str, execution] = self.__scan_uut()
             if (execution):
-                return [sn_str, rev_str, pn_str, seq_file, limits_file, settings_file]
+                return [sn_str, rev_str, pn_str, limits_file, settings_file]
             else:
                 return None
         # Execution is TCP/IP mode, UUT info coming from the TCP service
