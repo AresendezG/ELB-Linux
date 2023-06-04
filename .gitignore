@@ -13,6 +13,9 @@ test_results/
 debugconfigs/
 debug_libs/
 
+# ignore vscode stuff
+.vscode/
+
 # Distribution / packaging
 .Python
 build/
