@@ -87,6 +87,13 @@ class GPIO_CONTROL:
         else:
             return True
         
+    # To be queried while the program is running in TCP mode
+    def detect_uut_tcp(self) -> bool:
+        # INT_L goes low when UUT is detected
+        detected = self.read_gpio(GPIO_PINS.INT_L)
+        return not detected
+
+
     def wait_effect(timeout:int, printmsg:bool = True):
         spinner = itertools.cycle(['-', '/', '|', '\\'])
         counter = 0

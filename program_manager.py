@@ -98,7 +98,7 @@ class ProgramControl:
             self.test_count = xml_handler.test_count
         except:
             self.log_mgr.print_message("ERROR: Unable to read Sequence XML File. Stopping Execution", MessageType.FAIL)
-            self.log_mgr.logtofile("ERROR:\tUnable to read the sequence XML Config File. Stopping")
+            self.log_mgr.log_to_file("ERROR:\tUnable to read the sequence XML Config File. Stopping")
             raise RuntimeError
     
     # Fnc to handle the firmware upgrade of the UUT
@@ -107,9 +107,9 @@ class ProgramControl:
         fwhandler = ELBFirmware(self.config_file, self.gpioctrl, self.log_mgr)
         # Verify the firmware version and try to upgrade it
         [fw_ver, retimer] = fwhandler.fw_verification()
-        self.log_mgr.logtofile("FW Version Before Upgrade: {}".format(fwhandler.old_fw))
-        self.log_mgr.logtofile("FW Version After Upgrade: {}".format(fw_ver))
-        self.log_mgr.logtofile("Retimer HostAddress: {}".format(retimer))
+        self.log_mgr.log_to_file("FW Version Before Upgrade: {}".format(fwhandler.old_fw))
+        self.log_mgr.log_to_file("FW Version After Upgrade: {}".format(fw_ver))
+        self.log_mgr.log_to_file("Retimer HostAddress: {}".format(retimer))
     
     def __Program_UUT_SN(self):
         self.log_mgr.print_message("Serial Number Programming", MessageType.WARNING, True)
@@ -149,11 +149,11 @@ class ProgramControl:
     
     def run_program(self) -> bool:
         # Run Detection check
-        self.log_mgr.logtofile("Event:\tRunning Detection")
+        self.log_mgr.log_to_file("Event:\tRunning Detection")
         uut_detection = self.gpioctrl.detect_uut(180)
         overall_result = True
         if uut_detection:
-            self.log_mgr.logtofile("UUT Detected. Running FW Upgrade")
+            self.log_mgr.log_to_file("UUT Detected. Running FW Upgrade")
             # Firmware Upgrade and SN Programming will execute first
             self.__FirmwareUpgrade()
             # Firmware Upgrade completed or Not required, launch i2c Communication

@@ -5,6 +5,7 @@ import sys
 import queue
 import threading
 from threading import Thread
+from prog_mgr_tcp import ProgramControl
 import time
 
 
@@ -34,8 +35,9 @@ class tcp_launcher:
             self.host = host
         else:
             self.host = "127.0.0.1"
-        
         self.port = port
+        # Launch Test Controller 
+        self.test_ctrl = ProgramControl()
         pass
 
     def run_tcp(self, *args, **kwargs):
@@ -59,10 +61,12 @@ class tcp_launcher:
                                 if (data):
                                     inbound_cmd =  "".join(chr(x) for x in data)
                                     cmd_history.append(inbound_cmd) # append the list of incoming commands
-                                    ret_data_str = f"Echo Back Message: {inbound_cmd}"
                                     ret_history.append(ret_data_str)
+                                    # ret_data_str = f"Echo Back Message: {inbound_cmd}"
+                                    ret_data_str = self.process_test_cmd(inbound_cmd)
                                     conn.sendall(bytes(ret_data_str, 'UTF-8'))
                                 if (not data or inbound_cmd.__contains__('FIN_CMD\n') or inbound_cmd.__contains__('END_CONN\n')):
+                                    self.process_test_cmd("END_TEST")
                                     break
                             except OSError: # Ignore reading attempts at empty commands
                                 print("Invalid Connection Status")
@@ -72,10 +76,6 @@ class tcp_launcher:
 
                     print(f"Received Termination Cmd: {inbound_cmd}")
                 print("Terminating TCP/IP Connection")
-                print("List of commands")
-                print(cmd_history)
-                print("List of Returns: ")
-                print(ret_history)
                 raise KeyboardInterrupt
             except KeyboardInterrupt:
                 print("Local user shutdown")
@@ -83,6 +83,26 @@ class tcp_launcher:
                 #print("Error during TCP Server")    
         return
 
+    
+    def process_test_cmd(self, inbound_cmd:str) -> str:
+        # Cmd contains Start Test:
+        if (inbound_cmd.__contains__('START_TEST') and not self.test_ctrl.test_started):
+            print("Start Test")
+            if (self.test_ctrl.start_test(inbound_cmd)):
+                return 'TEST_START_CORRECT'
+            else:
+                return 'TEST_START_ERROR'
+        elif (inbound_cmd.__contains__('RUN_TEST') and self.test_ctrl.test_started):
+            print("Run Test")
+            res_str = self.test_ctrl.run_test(inbound_cmd)
+            return res_str
+        elif (inbound_cmd.__contains__('END_TEST')):
+            return self.test_ctrl.end_test()
+        else:
+            return "INVALID_CMD"
+
+
+    
     # Launch TCP server
     def launch_tcp(self):
         t = PropagatingThread(target=self.run_tcp, args=(5,), kwargs={'port':self.port, 'host':self.host})

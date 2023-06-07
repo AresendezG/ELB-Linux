@@ -6,6 +6,7 @@ from gpio_ctrl import GPIO_CONTROL
 from i2c_types import LedMode, MOD_Rates, PowerLoad_Modes, ELB_GPIOs
 from i2c_types import CurrentSensors, TempSensors, VoltageSensors
 from log_management import LOG_Manager, MessageType
+from firmware import ELBFirmware
 from smbus2 import SMBus
 
 
@@ -26,7 +27,7 @@ class ELB_i2c:
 
     #function declaration
 
-    def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL, log_handler:LOG_Manager) -> None:
+    def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL, log_handler:LOG_Manager, config_file:str = None) -> None:
         self.log_mgr = log_handler
         self.log_mgr.print_message("Initialize SMBus", MessageType.EVENT)
         self.bus = SMBus(self.DEVICE_BUS)
@@ -38,6 +39,8 @@ class ELB_i2c:
         self.prbs_modrate = prbs_modrate 
         # Define i2c address from the program manager 
         self.DEV_ADD = i2c_add
+        if (config_file != None):
+            self.config_file = config_file
         pass
     
     # Cleanup
@@ -175,6 +178,39 @@ class ELB_i2c:
         return (lol_status + hostchkber)
 
     # ------ Sequences ---------------
+
+    def run_firmware_upgrade(self) -> list:
+        self.log_mgr.print_message("Firmware Programming", MessageType.EVENT, True)
+        self.bus.close()
+        fwhandler = ELBFirmware(self.config_file, self.gpioctrl, self.log_mgr)
+        # Verify the firmware version and try to upgrade it
+        [fw_ver, retimer] = fwhandler.fw_verification()
+        self.log_mgr.log_to_file("FW Version Before Upgrade: {}".format(fwhandler.old_fw))
+        self.log_mgr.log_to_file("FW Version After Upgrade: {}".format(fw_ver))
+        self.log_mgr.log_to_file("Retimer HostAddress: {}".format(retimer))
+        self.bus.open(self.DEVICE_BUS)
+        return [["fw_before", fwhandler.old_fw], ["fw_after", fw_ver], ["ret_host", retimer]]
+
+    # Fnc to handle the firmware upgrade of the UUT
+    
+    def prog_verify_sn(self, serial: str, part_number: str, rev: str) -> list:
+        self.log_mgr.print_message("Serial Number Programming", MessageType.WARNING, True)
+        # Read the old SN (if any)
+        old_uut_data = self.uut_serial_num()
+        old_sn_str:str
+        old_sn_str = old_uut_data[0][1]
+        # Data in the SN register is Juniper format, thus this is a re-test
+        if (old_sn_str[0:2] == "ZP"):
+            self.log_mgr.print_message("UUT has a valid SN already Programmed", MessageType.WARNING, True)
+            self.log_mgr.print_message("Old UUT SN: {}".format(old_sn_str), MessageType.WARNING, True)
+        self.write_uut_sn(serial, part_number, rev)
+        self.log_mgr.print_message(f"New SN: {serial}", MessageType.EVENT, True)
+        self.log_mgr.print_message(f"Revision {rev}", MessageType.EVENT, True)
+        self.log_mgr.print_message(f"Part Number: {part_number}", MessageType.EVENT, True)
+        # Wait 2 seconds to sync up 
+        time.sleep(2)
+        return [["old_sn", old_sn_str],["new_sn", serial],["partnum", part_number],["rev", rev]]
+
     
     def write_uut_sn(self, serial: str, part_number: str, rev: str):
         self.log_mgr.print_message("Writing SN to ELB", MessageType.EVENT)
@@ -310,7 +346,7 @@ class ELB_i2c:
                 result = "PASS"
             else:
                 result = "FAIL"
-            self.log_mgr.logtofile(f"LED Test {led_possible_status[status][1]} User Input: {user_input} Expected: {led_possible_status[status][0]}")
+            self.log_mgr.log_to_file(f"LED Test {led_possible_status[status][1]} User Input: {user_input} Expected: {led_possible_status[status][0]}")
             # Append result for each of the possible status to the results list
             seq_results.append([led_possible_status[status][1], result])
         # Turn off LED
