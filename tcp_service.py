@@ -118,6 +118,11 @@ class tcp_launcher:
                     break
             except KeyboardInterrupt:
                 print("User Shutdown via Keyboard Interrupt")
+                try:
+                    self.test_ctrl.end_test()
+                    del self.test_ctrl
+                except:
+                    return
                 return
             except AttributeError:
                 None

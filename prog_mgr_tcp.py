@@ -4,7 +4,7 @@ from log_management import LOG_Manager, MessageType
 from debug_libs.dummy_i2c_comm import ELB_i2c
 from i2c_types import MOD_Rates
 from debug_libs.dummy_gpio import GPIO_CONTROL
-
+from results_processing import ResultsManager
 # This class will define how the program flows
 
 class ProgramControl:  
@@ -18,6 +18,12 @@ class ProgramControl:
     def __init__(self) -> None:
         pass
     
+    def __del__(self):
+        try:
+            self.end_test()
+        except:
+            pass
+
     def __StartLog(self, serial:str) -> None:
         try:
             # Start Logfile handler. This is also the console rich handler.
@@ -34,6 +40,7 @@ class ProgramControl:
         self.rev = self.input_args['rev']
         self.partnum = self.input_args['partnum']
         self.config_file = self.input_args['config']
+        self.limits_file = self.input_args['limits']
 
         # Validate SN, Rev, Partnum
         self.__validate_param(self.sn, "Serial", 5)
@@ -78,11 +85,15 @@ class ProgramControl:
                 cmd_settings = in_settings.strip('\n')
                 self.input_args = json.loads(cmd_settings)
                 self.__ValidateArgs()
+                # Creates the Logmanager Object to log the results
                 self.__StartLog(self.sn)
                 # Launch the GPIO controller
                 self.gpioctrl = GPIO_CONTROL(self.log_mgr)
                 # Launch the i2c test group:
                 self.i2ctests = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.config_file)
+                self.results_processor = ResultsManager(self.limits_file, self.log_mgr)
+                # create dynamically the new limits from the expected SN
+                self.results_processor.Add_SN_ToLimits(self.sn, self.partnum, self.rev)
                 self.test_started = True
                 return True
             else:
@@ -95,10 +106,19 @@ class ProgramControl:
 
     def run_test(self, details:str) -> str:
         try:
-            test_details = json.loads(details)
+            clean_details = details.strip('\n')
+            test_details = json.loads(clean_details)
+            # Get settings from the TCP client
             test_name = test_details['testname']
+            log_test = bool(test_details['log_test'])
             test_fnc_ref = getattr(self.i2ctests, test_name)
             results = test_fnc_ref()
+            if (log_test):
+                # Analyzes all the results and converts into a formatted array to be logged to a file
+                [seq_result, log_lines] = self.results_processor.ProcessResults(test_name, results)
+                # Log the results from this sequence into the results file
+                self.log_mgr.log_sequence_results(log_lines)
+            # Returns the raw results to the TCP Client
             ret_json = json.dumps(results)
             return ret_json
         except KeyError:
@@ -108,9 +128,13 @@ class ProgramControl:
         except:
             return "ERROR-UNKNOWN"
 
-    def end_test(self, details:str) -> str:
+    def end_test(self) -> str:
         # Cleanup 
         self.i2ctests.uut_cleanup()
         self.log_mgr.close_logs()
+        # Delete objects
+        del self.log_mgr 
+        del self.gpioctrl
+        del self.i2ctests
         self.test_started = False
         return "CLEANUP_DONE"

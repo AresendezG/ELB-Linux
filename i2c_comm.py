@@ -25,6 +25,10 @@ class ELB_i2c:
     # Determine if UUT has started the PRBS Routine
     prbs_started = False
 
+    # UUT Variables
+    serial = ""
+    part_number = ""
+    rev = ""
     #function declaration
 
     def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL, log_handler:LOG_Manager, config_file:str = None) -> None:
@@ -179,6 +183,13 @@ class ELB_i2c:
 
     # ------ Sequences ---------------
 
+    # Define the class variables only, no inteface with the UUT yet
+    def define_uut_sn(self, uut_data:list) -> None:
+        self.serial = uut_data[0]
+        self.part_number = uut_data[1]
+        self.rev = uut_data[2]
+        return
+
     def run_firmware_upgrade(self) -> list:
         self.log_mgr.print_message("Firmware Programming", MessageType.EVENT, True)
         self.bus.close()
@@ -193,7 +204,7 @@ class ELB_i2c:
 
     # Fnc to handle the firmware upgrade of the UUT
     
-    def prog_verify_sn(self, serial: str, part_number: str, rev: str) -> list:
+    def prog_verify_sn(self) -> list:
         self.log_mgr.print_message("Serial Number Programming", MessageType.WARNING, True)
         # Read the old SN (if any)
         old_uut_data = self.uut_serial_num()
@@ -203,13 +214,13 @@ class ELB_i2c:
         if (old_sn_str[0:2] == "ZP"):
             self.log_mgr.print_message("UUT has a valid SN already Programmed", MessageType.WARNING, True)
             self.log_mgr.print_message("Old UUT SN: {}".format(old_sn_str), MessageType.WARNING, True)
-        self.write_uut_sn(serial, part_number, rev)
-        self.log_mgr.print_message(f"New SN: {serial}", MessageType.EVENT, True)
-        self.log_mgr.print_message(f"Revision {rev}", MessageType.EVENT, True)
-        self.log_mgr.print_message(f"Part Number: {part_number}", MessageType.EVENT, True)
+        self.write_uut_sn(self.serial, self.part_number, self.rev)
+        self.log_mgr.print_message(f"New SN: {self.serial}", MessageType.EVENT, True)
+        self.log_mgr.print_message(f"Revision {self.rev}", MessageType.EVENT, True)
+        self.log_mgr.print_message(f"Part Number: {self.part_number}", MessageType.EVENT, True)
         # Wait 2 seconds to sync up 
         time.sleep(2)
-        return [["old_sn", old_sn_str],["new_sn", serial],["partnum", part_number],["rev", rev]]
+        return [["old_sn", old_sn_str],["serial", self.serial],["partnum", self.part_number],["rev", self.rev]]
 
     
     def write_uut_sn(self, serial: str, part_number: str, rev: str):

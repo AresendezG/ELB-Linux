@@ -21,7 +21,7 @@ class LOG_Manager():
     
     def __init__(self, def_path: str) -> None:
         # Var definitions
-        self.default_path = def_path
+        self.logs_path = def_path
         self.logfile = None     # Handler of the plaintxt logfile
         self.resultsfile = None # Handler of the results logfile
         self.logfilename = ""
@@ -38,10 +38,10 @@ class LOG_Manager():
 
     # Validate default paths
     def __validate_def_path(self) -> bool:
-        if not os.path.exists(self.default_path):
+        if not os.path.exists(self.logs_path):
         # Try to create the default dir if it does not exist
             try:
-                os.makedirs(self.default_path)
+                os.makedirs(self.logs_path)
                 return True
         # for whatever reason, OS has rejected the creation of the default dir    
             except:
@@ -49,30 +49,34 @@ class LOG_Manager():
         else:
             return True 
 
-    def __create_logfile_handlers(self, datetime_str) -> bool:
+    def __create_logfile_handlers(self) -> bool:
         log_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        # Update the results logfile
-        self.logfilename =     log_time+"\ELB_"+self.serial+"_"+log_time+self.ext_logfile
-        self.resultsfilename = log_time+"\ELB_"+self.serial+"_"+log_time+self.ext_results
+        self.logs_path = self.logs_path + "/" + log_time
+        if (self.__validate_def_path()):
+            # Update the results logfile
+            self.logfilename =     "/ELB_"+log_time+"_"+self.serial+self.ext_logfile
+            self.resultsfilename = "/ELB_"+log_time+"_"+self.serial+self.ext_results
 
-        # check if file exists
-        filecnt = 0
-        while os.path.isfile(self.default_path+self.logfilename):
-            filecnt = filecnt + 1
-            # print warning
-            print("Warning: File already exist: {}\n".format(self.default_path+self.logfilename))
-            # create unique file name
-            self.logfilename =     log_time+"\ELB_"+self.serial+"_"+log_time+"_"+str(filecnt)+self.ext_logfile
-            self.resultsfilename = log_time+"\ELB_"+self.serial+"_"+log_time+"_"+str(filecnt)+self.ext_results
-        # create files
-        try: 
-            self.logfile = open(self.default_path+self.logfilename, "w")
-            self.resultsfile = open(self.default_path+self.resultsfilename, "w")
-            print("Event: Opened {}\n".format(self.default_path+self.logfilename))
-            print("Event: Opened {}\n".format(self.default_path+self.resultsfilename))
-            return True
-        except:
-            print("ERROR: Unable to open Logfiles!")
+            # check if file exists
+            filecnt = 0
+            while os.path.isfile(self.logs_path+self.logfilename):
+                filecnt = filecnt + 1
+                # print warning
+                print("Warning: File already exist: {}\n".format(self.logs_path+self.logfilename))
+                # create unique file name
+                self.logfilename =     "/ELB_"+self.serial+"_"+log_time+"_"+str(filecnt)+self.ext_logfile
+                self.resultsfilename = "/ELB_"+self.serial+"_"+log_time+"_"+str(filecnt)+self.ext_results
+            # create files
+            try: 
+                self.logfile = open(self.logs_path+self.logfilename, "w")
+                self.resultsfile = open(self.logs_path+self.resultsfilename, "w")
+                print("Event: Opened {}\n".format(self.logs_path+self.logfilename))
+                print("Event: Opened {}\n".format(self.logs_path+self.resultsfilename))
+                return True
+            except:
+                print("ERROR: Unable to open Logfiles!")
+                return False
+        else:
             return False
 
     def __print_logfile_header(self) -> bool:
@@ -94,13 +98,12 @@ class LOG_Manager():
         # Validate serial number
         if (len(serial) < 1):
             raise TypeError("ERROR: Expected a Serial Number as Parameter")        
-        dir_status = self.__validate_def_path()
         files_status = self.__create_logfile_handlers()
-        if (dir_status and files_status):
+        if (files_status):
             self.start_time = datetime.datetime.now()
             return self.__print_logfile_header()
         else:
-            raise FileExistsError
+            raise FileExistsError("ERROR: Unable to Create the LogFiles")
 
 
     def log_to_file(self, line: str):
