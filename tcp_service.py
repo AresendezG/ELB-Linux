@@ -61,9 +61,9 @@ class tcp_launcher:
                                 if (data):
                                     inbound_cmd =  "".join(chr(x) for x in data)
                                     cmd_history.append(inbound_cmd) # append the list of incoming commands
-                                    ret_history.append(ret_data_str)
                                     # ret_data_str = f"Echo Back Message: {inbound_cmd}"
                                     ret_data_str = self.process_test_cmd(inbound_cmd)
+                                    ret_history.append(ret_data_str)
                                     conn.sendall(bytes(ret_data_str, 'UTF-8'))
                                 if (not data or inbound_cmd.__contains__('FIN_CMD\n') or inbound_cmd.__contains__('END_CONN\n')):
                                     self.process_test_cmd("END_TEST")

@@ -37,7 +37,7 @@ class ProgramControl:
 
         # Validate SN, Rev, Partnum
         self.__validate_param(self.sn, "Serial", 5)
-        self.__validate_param(self.rev,"Revision", 2)
+        self.__validate_param(self.rev,"Revision", 1)
         self.__validate_param(self.partnum, "Part Number", 5)
 
         # Read the settings from the Json file
@@ -75,7 +75,8 @@ class ProgramControl:
     def start_test(self, in_settings:str) -> bool:
         try:
             if (not self.test_started):
-                self.input_args = json.loads(in_settings)
+                cmd_settings = in_settings.strip('\n')
+                self.input_args = json.loads(cmd_settings)
                 self.__ValidateArgs()
                 self.__StartLog(self.sn)
                 # Launch the GPIO controller
