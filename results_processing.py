@@ -52,7 +52,7 @@ class ResultsManager:
         # get the list of results for this group of tests from the JSON limits file
         try:
             # Find if this group of tests has a defined group of limits
-            seq_limits_list = self.all_limits[seqname]
+            seq_limits_list = self.all_limits[seqname]["step_list"]
             for item in range (len(results)):
                 try:
                     # Get individual test limits based on the test name
@@ -115,7 +115,10 @@ class ResultsManager:
         uut_pn2_hex = ResultsManager.create_pn2(uut_pn, uut_rev)
         uut_pn2_str = "".join(chr(x) for x in uut_pn2_hex)
         # Create a dict with the dynamic parameters
-        serialnum_dict:dict = {'uut_serial_num':{
+        serialnum_dict:dict = {
+            'uut_serial_num':{
+                    "step_list":
+                    {
                         "serial":
                         {
                         "test_name": "SERIAL_NUMBER_READBACK",
@@ -145,7 +148,14 @@ class ResultsManager:
                           "numeric":False
                         }           
                       }
-                      }
+                    },
+                    "settings":
+                    {
+                        "run":True,
+                        "retries":True,
+                        "attempts":3
+                    }
+                    }
         # Append the newly created dict to the all limits dict
         self.all_limits.update(serialnum_dict)
         return self.all_limits

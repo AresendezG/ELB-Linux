@@ -19,9 +19,12 @@ if (arguments[0] != "TCPMODE"):
 else:
     try:
         tcp_srv = tcp_launcher(arguments[1], arguments[2])
-        tcp_srv.launch_tcp()
+        # Launch the TCP Server
+        tcp_srv.run_tcp(None,  {'port':arguments[1], 'host':arguments[2]})
     except KeyboardInterrupt:
         print("Finishing Execution due to detected interrupt")
+    except:
+        print("Error Ocurred")
 
 
 

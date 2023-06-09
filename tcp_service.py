@@ -41,8 +41,12 @@ class tcp_launcher:
         pass
 
     def run_tcp(self, *args, **kwargs):
-        host = kwargs['host']
-        port = kwargs['port']
+        try:
+            host = kwargs['host']
+            port = kwargs['port']
+        except KeyError:
+            port = self.port
+            host = self.host
         print(f"port: {port}, host: {host}")
         inbound_cmd = "NONE_RECEIVED"
         cmd_history = []
@@ -103,8 +107,8 @@ class tcp_launcher:
 
 
     
-    # Launch TCP server
-    def launch_tcp(self):
+    # Launch TCP server in a child thread
+    def launch_tcp_thread(self):
         t = PropagatingThread(target=self.run_tcp, args=(5,), kwargs={'port':self.port, 'host':self.host})
         t.start()
         #t.run()

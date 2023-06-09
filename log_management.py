@@ -51,7 +51,7 @@ class LOG_Manager():
 
     def __create_logfile_handlers(self) -> bool:
         log_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.logs_path = self.logs_path + "/" + log_time
+        self.logs_path = self.logs_path + "/"+self.serial+"/"+ log_time
         if (self.__validate_def_path()):
             # Update the results logfile
             self.logfilename =     "/ELB_"+log_time+"_"+self.serial+self.ext_logfile
@@ -227,6 +227,7 @@ class LOG_Manager():
         str_to_print = (f"{MessageType.USER}USER INPUT:\t{flash}\t{off}\t{green}\t{red}")
         # print to console
         print(str_to_print)
+        pass
 
 
     # print PASS on Green and FAILs on Red
@@ -247,11 +248,9 @@ class LOG_Manager():
             try:
                 self.logfile.close()
                 self.resultsfile.close()
-                os.chmod(self.logfile,0o777)
-                os.chmod(self.resultsfile,0o777)
+                os.chmod(self.logs_path+self.logfilename,0o777)
+                os.chmod(self.logs_path+self.resultsfilename,0o777)
                 self.files_closed = True
             except:
                 return
-
-
 
