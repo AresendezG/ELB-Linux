@@ -93,7 +93,10 @@ class tcp_launcher:
         if (inbound_cmd.__contains__('START_TEST') and not self.test_ctrl.test_started):
             print("Start Test")
             if (self.test_ctrl.start_test(inbound_cmd)):
-                return 'TEST_START_CORRECT'
+                if (self.test_ctrl.detect_uut(20)):
+                    return 'TEST_START_CORRECT'
+                else:
+                    return 'UNDETECTED_UUT'
             else:
                 return 'TEST_START_ERROR'
         elif (inbound_cmd.__contains__('RUN_TEST') and self.test_ctrl.test_started):

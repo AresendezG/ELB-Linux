@@ -69,8 +69,11 @@ class GPIO_PINS:
     LPMODE      =   20
     MODSEL      =   13
     RESET_L     =   16
+    LED_FIX		= 	17
     # Inputs for the Pi
-    INT_L       =   26
-    PRESENT_L   =   19
+    INT_L		=   26
+    PRESENT_L	=   19
+
+	
 
 

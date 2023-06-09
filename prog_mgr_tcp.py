@@ -104,6 +104,16 @@ class ProgramControl:
         except:
             return False
 
+    def detect_uut(self, timeout:int) -> bool:
+        counter = 0
+        while (counter < (timeout*4)):
+            # Takes 0.25s to
+            results = self.gpioctrl.detect_uut_tcp()
+            if (results):
+                return results
+            counter = counter+1
+        return False
+
     def run_test(self, details:str) -> str:
         try:
             clean_details = details.strip('\n')
