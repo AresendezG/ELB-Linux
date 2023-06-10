@@ -94,7 +94,7 @@ class ProgramControl:
     def __Read_FlowConfig(self):
         try:
             xml_handler = SeqConfig()
-            self.test_flow = xml_handler.ReadSeq_Settings(self.seq_file)
+            self.test_flow = xml_handler.ReadSeq_Settings_XML(self.seq_file)
             self.test_count = xml_handler.test_count
         except:
             self.log_mgr.print_message("ERROR: Unable to read Sequence XML File. Stopping Execution", MessageType.FAIL)

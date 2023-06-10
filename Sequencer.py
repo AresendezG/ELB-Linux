@@ -1,4 +1,6 @@
 import xml.etree.ElementTree as ET
+import os
+import json
 
 class SeqConfig:
     
@@ -8,7 +10,7 @@ class SeqConfig:
         
         pass
 
-    def ReadSeq_Settings(self, xmlfile) -> list:  
+    def ReadSeq_Settings_XML(self, xmlfile) -> list:  
         # Reset the test counter
         self.test_count = 0
         # create element tree object
@@ -34,3 +36,18 @@ class SeqConfig:
             ++self.test_count      
         # return news items list
         return tests
+    
+    def ReadSeq_Settings_JSON(limits_file:str) -> list:
+        
+        flow = []
+        if (os.path.isfile(limits_file)):
+            with open(limits_file, 'r') as f:
+                all_limits = json.load(f)
+        else:
+            print("ERROR:\tTest Limits File does not exist")
+            raise FileNotFoundError
+        for item in all_limits:
+            print(item["step_settings"])
+            flow.append(item["step_settings"])
+
+        return flow

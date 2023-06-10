@@ -101,21 +101,14 @@ class i2c_PicoInterface:
 
 
 def __main__():
+    SeqObject = SeqConfig()
     print("Launch Logfile Manager")
-    log_mgr = LOG_Manager("DUMMYSERIAL", "C:\\BalerionELB\\logs\\debuglogs\\")
-    results_mgr = ResultsManager("limits.json", log_mgr)
-    all_lims:dict = results_mgr.all_limits
-    print("Event:\tOriginal Dict")
-    print(all_lims)
-    print("Event:\tUpdating Dict")
-    serial = "SERIALNUMBER"
-    partnumber = "PARTNUMBER" 
-    rev = "09"
-    results_mgr.Add_SN_ToLimits(serial, partnumber, rev)    
-    print("Event:\t Update Dict")
-    print(all_lims)
+    flow_json = SeqConfig.ReadSeq_Settings_JSON('debugconfigs/limits.json')
+    for item in flow_json:
+        print(item)
+    
 
-#__main__()
+__main__()
 
           
         
