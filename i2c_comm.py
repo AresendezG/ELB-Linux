@@ -51,8 +51,7 @@ class ELB_i2c:
     def __del__(self):
         self.uut_cleanup()
 
-    #----- Individual Steps
-
+    #----- Internal functions------------
     # Function to test the temperature 
     def __ReadTempFnc(self, regaddress: int) -> float:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, regaddress, 2)
@@ -181,17 +180,19 @@ class ELB_i2c:
         # Return a single list
         return (lol_status + hostchkber)
 
-    # ------ Sequences ---------------
+    # ------ Sequences (can be called from outside the object) ---------------
 
     # Define the class variables only, no inteface with the UUT yet
     def define_uut_sn(self, uut_data:list) -> None:
         self.serial = uut_data[0]
         self.part_number = uut_data[1]
         self.rev = uut_data[2]
+        self.sn_defined = True
         return
 
+    # Fnc to handle the firmware upgrade of the UUT
     def run_firmware_upgrade(self) -> list:
-        self.log_mgr.print_message("Firmware Programming", MessageType.EVENT, True)
+        self.log_mgr.print_message("Running UUT Firmware Verification", MessageType.EVENT, True)
         self.bus.close()
         fwhandler = ELBFirmware(self.config_file, self.gpioctrl, self.log_mgr)
         # Verify the firmware version and try to upgrade it
@@ -200,28 +201,53 @@ class ELB_i2c:
         self.log_mgr.log_to_file("FW Version After Upgrade: {}".format(fw_ver))
         self.log_mgr.log_to_file("Retimer HostAddress: {}".format(retimer))
         self.bus.open(self.DEVICE_BUS)
-        return [["fw_before", fwhandler.old_fw], ["fw_after", fw_ver], ["ret_host", retimer]]
-
-    # Fnc to handle the firmware upgrade of the UUT
+        # Return old FW Version as float to allow any version to be reported 
+        return [["fw_before", float(fwhandler.old_fw)], ["fw_after", fw_ver], ["ret_host", retimer]]
     
-    def prog_verify_sn(self) -> list:
-        self.log_mgr.print_message("Serial Number Programming", MessageType.WARNING, True)
-        # Read the old SN (if any)
-        old_uut_data = self.uut_serial_num()
-        old_sn_str:str
-        old_sn_str = old_uut_data[0][1]
-        # Data in the SN register is Juniper format, thus this is a re-test
-        if (old_sn_str[0:2] == "ZP"):
-            self.log_mgr.print_message("UUT has a valid SN already Programmed", MessageType.WARNING, True)
-            self.log_mgr.print_message("Old UUT SN: {}".format(old_sn_str), MessageType.WARNING, True)
-        self.write_uut_sn(self.serial, self.part_number, self.rev)
-        self.log_mgr.print_message(f"New SN: {self.serial}", MessageType.EVENT, True)
-        self.log_mgr.print_message(f"Revision {self.rev}", MessageType.EVENT, True)
-        self.log_mgr.print_message(f"Part Number: {self.part_number}", MessageType.EVENT, True)
-        # Wait 2 seconds to sync up 
-        time.sleep(2)
-        return [["old_sn", old_sn_str],["serial", self.serial],["partnum", self.part_number],["rev", self.rev]]
+    def prog_uut_sn(self) -> list:
+        # This function reads the OLD sn if any and Programs the new SN. 
+        if(self.sn_defined):
+            self.log_mgr.print_message("Serial Number Programming", MessageType.WARNING, True)
+            # Read the old SN (if any)
+            old_uut_data = self.uut_serial_num()
+            old_sn_str:str
+            old_sn_str = old_uut_data[0][1]
+            # Data in the SN register is Juniper format, thus this is a re-test
+            if (old_sn_str[0:2] == "ZP"):
+                self.log_mgr.print_message("UUT has a valid SN already Programmed", MessageType.WARNING, True)
+                self.log_mgr.print_message("Old UUT SN: {}".format(old_sn_str), MessageType.WARNING, True)
+            self.write_uut_sn(self.serial, self.part_number, self.rev)
+            self.log_mgr.print_message(f"New SN: {self.serial}", MessageType.EVENT, True)
+            self.log_mgr.print_message(f"Revision {self.rev}", MessageType.EVENT, True)
+            self.log_mgr.print_message(f"Part Number: {self.part_number}", MessageType.EVENT, True)
+            return [["old_sn", old_sn_str],["serial", self.serial],["partnum", self.part_number],["rev", self.rev]]
+        else:
+            print("Error: Serial Number not been defined")
+            raise KeyError
 
+    def uut_serial_num(self) -> list:
+        self.log_mgr.print_message("Readback of UUT SN", MessageType.EVENT, True)
+        # write page 0
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
+        # read SN from reg166  
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 166, 16)
+        serial_array = [x for x in retdata] #array that holds the serialnumber
+        serial_str = "".join(chr(x) for x in serial_array)
+        # read PN from reg148
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 148, 16)
+        pn_array = [x for x in retdata] #array that holds the part number
+        part_number = "".join(chr(x) for x in pn_array)
+        # read revision from reg164
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
+        revision = [x for x in retdata] # array that holds the rev number
+        rev_str = "".join(chr(x) for x in revision)
+        # Read PN-2 from register 224. Per Write sn algorithm, it will be only 18 bytes
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 224, 18)
+        pn2 = [x for x in retdata] # array that holds the rev number
+        pn2_str = "".join(chr(x) for x in pn2)
+        #print("Serial Number: "+serial_str)
+        return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["partnum2", pn2_str]]
+    
     
     def write_uut_sn(self, serial: str, part_number: str, rev: str):
         self.log_mgr.print_message("Writing SN to ELB", MessageType.EVENT)
@@ -255,10 +281,11 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 0, 16])
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         time.sleep(1)
-        print("Event: \tReset UUT to Write SN and Wait 2 seconds")
+        print("Event: \tReset UUT for 2 seconds")
         self.gpioctrl.reset_uut(2)
         # Let UUT some recovery time
-        time.sleep(2)
+        print("Waiting 5 Seconds for recovery")
+        time.sleep(5)
         pass
 
     def uut_fw_version(self) -> list:
@@ -413,29 +440,6 @@ class ELB_i2c:
         duty_ms = self.__ReadEPPS_Data(162, 2)
         return [["freq",freq], ["duty_percent",duty_percent], ["duty_ms",duty_ms]]
 
-    def uut_serial_num(self) -> list:
-        self.log_mgr.print_message("Readback of UUT SN", MessageType.EVENT, True)
-        # write page 0
-        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
-        # read SN from reg166  
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 166, 16)
-        serial_array = [x for x in retdata] #array that holds the serialnumber
-        serial_str = "".join(chr(x) for x in serial_array)
-        # read PN from reg148
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 148, 16)
-        pn_array = [x for x in retdata] #array that holds the part number
-        part_number = "".join(chr(x) for x in pn_array)
-        # read revision from reg164
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
-        revision = [x for x in retdata] # array that holds the rev number
-        rev_str = "".join(chr(x) for x in revision)
-        # Read PN-2 from register 224. Per Write sn algorithm, it will be only 18 bytes
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 224, 18)
-        pn2 = [x for x in retdata] # array that holds the rev number
-        pn2_str = "".join(chr(x) for x in pn2)
-        #print("Serial Number: "+serial_str)
-        return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["partnum2", pn2_str]]
-    
     def ins_count(self) -> list:
         self.log_mgr.print_message("Insertion Counter", MessageType.EVENT, True)
         # Read the insertion counter

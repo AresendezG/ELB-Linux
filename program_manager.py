@@ -26,18 +26,18 @@ class ProgramControl:
     # Object to handle the i2c communication with UUT
     i2c_comm = None
 
-
     # Define the stuff that needs to happen for this object runs 
     def __init__(self, args) -> None:
         print("Message: \tInit Test Program")
         self.input_args = args
         self.__ValidateArgs()
         self.__StartLog()
+        # Read flow config needs to happen first to create the flow template
         self.__Read_FlowConfig()
         # Launch the results processing object with a reference to the log_mgr object
         self.results_mgr = ResultsManager(self.limits_file, self.log_mgr)
-        # Define as testlimit the serial number, partnumber and revision
-        self.results_mgr.Add_SN_ToLimits(self.sn, self.partnum, self.rev)
+        # Include the Serial number as new test limits to the result-manager object
+        self.results_mgr.include_sn_limits(uut_serial=self.sn, uut_pn=self.partnum, uut_rev=self.rev)
         # Launch the GPIO controller
         self.gpioctrl = GPIO_CONTROL(self.log_mgr)
         pass
@@ -45,7 +45,12 @@ class ProgramControl:
     def __StartLog(self) -> None:
         try:
             # Start Logfile handler. This is also the console rich handler.
-            self.log_mgr = LOG_Manager(self.sn, self.log_path)
+            self.log_mgr = LOG_Manager(self.log_path)
+            if (self.log_mgr.create_log_files(self.sn)):
+                return
+            else:
+                print("Stopping since the Logfiles could not be created!")
+                raise RuntimeError
         except:
             print("ERROR: \tUnable to Start the Logfiles. Verify settings")
             # We dont want executions with empty lofgiles. Stop Here.
@@ -65,7 +70,7 @@ class ProgramControl:
             self.seq_file = self.input_args[3]
             self.limits_file = self.input_args[4]
             self.config_file = self.input_args[5]
-            # Read the settings from the Json file
+            # Read the settings from the Settings.JSON file
             self.__Read_Settings()
         return
     
@@ -90,17 +95,17 @@ class ProgramControl:
             print("ERROR:\tWrong Configuration settings")
             raise FileExistsError
     
-    # Reading the flow-control from the seqconfig.xml file 
+    # Reading the flow-control from a json file with the sequence and test limits
     def __Read_FlowConfig(self):
+        SeqHandler = SeqConfig()
         try:
-            xml_handler = SeqConfig()
-            self.test_flow = xml_handler.ReadSeq_Settings_XML(self.seq_file)
-            self.test_count = xml_handler.test_count
+            # Testflow will include SN prog and FW upgrade as theyre defined in the template
+            self.test_flow = SeqHandler.ReadSeq_Settings_JSON(self.limits_file)
+            self.test_count = SeqHandler.test_count
         except:
-            self.log_mgr.print_message("ERROR: Unable to read Sequence XML File. Stopping Execution", MessageType.FAIL)
-            self.log_mgr.log_to_file("ERROR:\tUnable to read the sequence XML Config File. Stopping")
+            self.log_mgr.print_message(f"Unable to read Sequence JSON File {self.limits_file}. Stopping Execution", MessageType.FAIL, True)
             raise RuntimeError
-    
+
     # Fnc to handle the firmware upgrade of the UUT
     def __FirmwareUpgrade(self):
         self.log_mgr.print_message("Firmware Programming", MessageType.EVENT, True)

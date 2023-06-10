@@ -28,16 +28,30 @@
         }
     },
 
-    "prbs_start":
+    "run_firmware_upgrade":
     {
         "step_list":
         {
-            "host_check":
+            "fw_before":
             {
-                "test_name": "HOST CHECK LOL STATUS",
+                "test_name": "FW_VERSION_BEFORE_UPGRADE",
                 "low_limit": 0,
-                "high_limit": 0,
-                "unit": "nA",
+                "high_limit": 10,
+                "report":true,
+                "numeric":true
+            },
+            "fw_after":
+            {
+                "test_name": "FIRMWARE_VERSION_CURRENT",
+                "expected_data": "0.71",
+                "report":true,
+                "numeric":false
+            },
+            "ret_host":
+            {
+                "test_name": "RET_I2C_ADD",
+                "low_limit": 0,
+                "high_limit": 100,
                 "report":true,
                 "numeric":true
             }
@@ -46,51 +60,47 @@
         {
             "run":true,
             "retries":true,
-            "attempts":3
+            "attempts":3,
+            "flow_cont":true
         }
     },
 
-    "leds_verification_random":
+    "prog_uut_sn":
     {
         "step_list":
         {
-            "led_flash": 
+
+            "serial":
             {
-                "test_name": "LED FLASH",
-                "expected_data": "PASS",
+                "test_name": "PROGRAMMED_SERIAL",
+                "expected_data": "EXPECTEDSERIAL",
                 "report":true,
                 "numeric":false
             },
-            "led_green":
+            "partnum":
             {
-                "test_name": "LED GREEN",
-                "expected_data": "PASS",
+                "test_name": "PROGRAMMED_PN",
+                "expected_data": "EXPECTEDPN",
                 "report":true,
                 "numeric":false
             },
-            "led_red":
+            "rev":
             {
-                "test_name": "LED RED",
-                "expected_data": "PASS",
-                "report":true,
-                "numeric":false
-            },
-            "led_off":
-            {
-                "test_name": "LED OFF",
-                "expected_data": "PASS",
+                "test_name": "PROGRAMMED_REV",
+                "expected_data": "EXPECTEDREV",
                 "report":true,
                 "numeric":false
             }
+
         },
         "settings":
         {
             "run":true,
             "retries":true,
-            "attempts":3
+            "attempts":3,
+            "flow_cont":true
         }
     },
-
 
     "uut_fw_version":
     {
@@ -133,7 +143,92 @@
         {
             "run":true,
             "retries":true,
-            "attempts":3
+            "attempts":3,
+            "flow_cont":true
+        }
+    },
+
+    "uut_serial_num":
+    {
+        "step_list":
+        {
+            "serial":
+            {
+                "test_name": "VERIFY UUT SERIAL",
+                "expected_data": "EXPECTEDSERIAL",
+                "report":true,
+                "numeric":false
+            },
+            "part_num":
+            {
+                "test_name": "VERIFY PART NUMBER",
+                "expected_data": "EXPECTEDPN",
+                "report":true,
+                "numeric":false
+            },
+            "rev":
+            {
+                "test_name": "VERIFY REVISION NUMBER",
+                "expected_data": "EXPECTEDREV",
+                "report":true,
+                "numeric":false
+            },
+            "pn2_str":
+            {
+                "test_name": "VERIFY 2ND PART NUMBER",
+                "expected_data": "EXPECTED2PN",
+                "report":true,
+                "numeric":false
+            }
+        },
+        "settings":
+        {
+            "run":true,
+            "retries":true,
+            "attempts":3,
+            "flow_cont":false
+        }
+    },
+
+    "leds_verification_random":
+    {
+        "step_list":
+        {
+            "led_flash": 
+            {
+                "test_name": "LED FLASH",
+                "expected_data": "PASS",
+                "report":true,
+                "numeric":false
+            },
+            "led_green":
+            {
+                "test_name": "LED GREEN",
+                "expected_data": "PASS",
+                "report":true,
+                "numeric":false
+            },
+            "led_red":
+            {
+                "test_name": "LED RED",
+                "expected_data": "PASS",
+                "report":true,
+                "numeric":false
+            },
+            "led_off":
+            {
+                "test_name": "LED OFF",
+                "expected_data": "PASS",
+                "report":true,
+                "numeric":false
+            }
+        },
+        "settings":
+        {
+            "run":true,
+            "retries":true,
+            "attempts":3,
+            "flow_cont":true
         }
     },
 
@@ -182,219 +277,11 @@
         {
             "run":true,
             "retries":true,
-            "attempts":3
+            "attempts":3,
+            "flow_cont":true
         }
     },
 
-    "temp_sensors": 
-    {
-        "step_list":
-        {
-            "uc_temp":
-            {
-                "test_name": "TEMP uC",
-                "low_limit": 0,
-                "high_limit": 100,
-                "unit": "c",
-                "report":true,
-                "numeric":true
-            },
-            "retimer_temp":
-            {
-                "test_name": "TEMP RTMR",
-                "low_limit": 0,
-                "high_limit": 100,
-                "unit": "c",
-                "report":true,
-                "numeric":true
-            },
-            "pcb_rt":
-            {
-                "test_name": "TEMP PCB RTMR",
-                "low_limit": 0,
-                "high_limit": 100,
-                "unit": "c",
-                "report":true,
-                "numeric":true
-            },
-            "pcb_pl":
-            {
-                "test_name": "TEMP PCB PL",
-                "low_limit": 0,
-                "high_limit": 100,
-                "unit": "c",
-                "report":true,
-                "numeric":true
-            }, 
-            "shell_f":
-            {
-                "test_name": "TEMP SHELL F",
-                "low_limit": 0,
-                "high_limit": 100,
-                "unit": "c",
-                "report":true,
-                "numeric":true
-            }, 
-            "shell_r":
-            {
-                "test_name": "TEMP SHELL R",
-                "low_limit": 0,
-                "high_limit": 100,
-                "unit": "c",
-                "report":true,
-                "numeric":true
-            }
-        },
-        "settings":
-        {
-            "run":true,
-            "retries":true,
-            "attempts":3
-        } 
-    },
-
-    "gpio_all":
-    {
-        "step_list":
-        {
-            "intl_low":
-            {
-                "test_name": "INT L LOW",
-                "low_limit": 0,
-                "high_limit": 0,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            },
-            "intl_high":
-            {
-                "test_name": "INT L HIGH",
-                "low_limit": 1,
-                "high_limit": 1,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            },
-            "presentl_low":
-            {
-                "test_name": "PRESENT L LOW",
-                "low_limit": 0,
-                "high_limit": 0,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            },
-            "presentl_high":
-            {
-                "test_name": "PRESENT L HIGH",
-                "low_limit": 1,
-                "high_limit": 1,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            },
-            "modsel_low":
-            {
-                "test_name": "MODSEL LOW",
-                "low_limit": 0,
-                "high_limit": 0,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            },
-            "modsel_high":
-            {
-                "test_name": "MODSEL HIGH",
-                "low_limit": 1,
-                "high_limit": 1,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            },
-            "lpmode_low":
-            {
-                "test_name": "LPMODE LOW",
-                "low_limit": 0,
-                "high_limit": 0,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            },
-            "lpmode_high":
-            {
-                "test_name": "LPMODE HIGH",
-                "low_limit": 2,
-                "high_limit": 2,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            },
-            "resetl_low":
-            {
-                "test_name": "RESET LOW",
-                "low_limit": 0,
-                "high_limit": 0,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            },
-            "resetl_high":
-            {
-                "test_name": "RESET HIGH",
-                "low_limit": 4,
-                "high_limit": 4,
-                "unit": "NA",
-                "report":true,
-                "numeric":true
-            }
-        },
-        "settings":
-        {
-            "run":true,
-            "retries":true,
-            "attempts":3
-        }
-    },
-    "epps_signal":
-    {
-        "step_list":
-        {
-            "freq":
-            {
-                "test_name": "EPPS FREQ HZ",
-                "low_limit": 12375000,
-                "high_limit": 12625000,
-                "unit": "Hz",
-                "report":true,
-                "numeric":true
-            },
-            "duty_percent":
-            {
-                "test_name": "EPPS Duty Percent",
-                "low_limit": 47.5,
-                "high_limit": 52.5,
-                "unit": "%",
-                "report":true,
-                "numeric":true
-            },
-            "duty_ms":
-            {
-                "test_name": "DUTY in MS",
-                "low_limit": 990,
-                "high_limit": 1010,
-                "unit": "ms",
-                "report":true,
-                "numeric":true
-            }
-        },
-        "settings":
-        {
-            "run":true,
-            "retries":true,
-            "attempts":3
-        }
-
-    },
     "ins_count":
     {
         "step_list":
@@ -422,10 +309,12 @@
         {
             "run":true,
             "retries":true,
-            "attempts":3
+            "attempts":3,
+            "flow_cont":true
         }
 
     },
+
     "power_loads":
     {
         "step_list":
@@ -543,8 +432,178 @@
         {
             "run":true,
             "retries":true,
-            "attempts":3
+            "attempts":3,
+            "flow_cont":true
         }
+    },
+
+    "prbs_start":
+    {
+        "step_list":
+        {
+            "host_check":
+            {
+                "test_name": "HOST CHECK LOL STATUS",
+                "low_limit": 0,
+                "high_limit": 0,
+                "unit": "nA",
+                "report":true,
+                "numeric":true
+            }
+        },
+        "settings":
+        {
+            "run":true,
+            "retries":true,
+            "attempts":3,
+            "flow_cont":true
+        }
+    },
+
+    "gpio_all":
+    {
+        "step_list":
+        {
+            "intl_low":
+            {
+                "test_name": "INT L LOW",
+                "low_limit": 0,
+                "high_limit": 0,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            },
+            "intl_high":
+            {
+                "test_name": "INT L HIGH",
+                "low_limit": 1,
+                "high_limit": 1,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            },
+            "presentl_low":
+            {
+                "test_name": "PRESENT L LOW",
+                "low_limit": 0,
+                "high_limit": 0,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            },
+            "presentl_high":
+            {
+                "test_name": "PRESENT L HIGH",
+                "low_limit": 1,
+                "high_limit": 1,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            },
+            "modsel_low":
+            {
+                "test_name": "MODSEL LOW",
+                "low_limit": 0,
+                "high_limit": 0,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            },
+            "modsel_high":
+            {
+                "test_name": "MODSEL HIGH",
+                "low_limit": 1,
+                "high_limit": 1,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            },
+            "lpmode_low":
+            {
+                "test_name": "LPMODE LOW",
+                "low_limit": 0,
+                "high_limit": 0,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            },
+            "lpmode_high":
+            {
+                "test_name": "LPMODE HIGH",
+                "low_limit": 2,
+                "high_limit": 2,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            },
+            "resetl_low":
+            {
+                "test_name": "RESET LOW",
+                "low_limit": 0,
+                "high_limit": 0,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            },
+            "resetl_high":
+            {
+                "test_name": "RESET HIGH",
+                "low_limit": 4,
+                "high_limit": 4,
+                "unit": "NA",
+                "report":true,
+                "numeric":true
+            }
+        },
+        "settings":
+        {
+            "run":true,
+            "retries":true,
+            "attempts":3,
+            "flow_cont":true
+        }
+    },
+
+    "epps_signal":
+    {
+        "step_list":
+        {
+            "freq":
+            {
+                "test_name": "EPPS FREQ HZ",
+                "low_limit": 12375000,
+                "high_limit": 12625000,
+                "unit": "Hz",
+                "report":true,
+                "numeric":true
+            },
+            "duty_percent":
+            {
+                "test_name": "EPPS Duty Percent",
+                "low_limit": 47.5,
+                "high_limit": 52.5,
+                "unit": "%",
+                "report":true,
+                "numeric":true
+            },
+            "duty_ms":
+            {
+                "test_name": "DUTY in MS",
+                "low_limit": 990,
+                "high_limit": 1010,
+                "unit": "ms",
+                "report":true,
+                "numeric":true
+            }
+        },
+        "settings":
+        {
+            "run":true,
+            "retries":true,
+            "attempts":3,
+            "flow_cont":true
+        }
+
     },
 
     "prbs_results":
@@ -700,9 +759,78 @@
         {
             "run":true,
             "retries":true,
-            "attempts":3
+            "attempts":3,
+            "flow_cont":true
         }
 
+    },
+
+    "temp_sensors": 
+    {
+        "step_list":
+        {
+            "uc_temp":
+            {
+                "test_name": "TEMP uC",
+                "low_limit": 0,
+                "high_limit": 100,
+                "unit": "c",
+                "report":true,
+                "numeric":true
+            },
+            "retimer_temp":
+            {
+                "test_name": "TEMP RTMR",
+                "low_limit": 0,
+                "high_limit": 100,
+                "unit": "c",
+                "report":true,
+                "numeric":true
+            },
+            "pcb_rt":
+            {
+                "test_name": "TEMP PCB RTMR",
+                "low_limit": 0,
+                "high_limit": 100,
+                "unit": "c",
+                "report":true,
+                "numeric":true
+            },
+            "pcb_pl":
+            {
+                "test_name": "TEMP PCB PL",
+                "low_limit": 0,
+                "high_limit": 100,
+                "unit": "c",
+                "report":true,
+                "numeric":true
+            }, 
+            "shell_f":
+            {
+                "test_name": "TEMP SHELL F",
+                "low_limit": 0,
+                "high_limit": 100,
+                "unit": "c",
+                "report":true,
+                "numeric":true
+            }, 
+            "shell_r":
+            {
+                "test_name": "TEMP SHELL R",
+                "low_limit": 0,
+                "high_limit": 100,
+                "unit": "c",
+                "report":true,
+                "numeric":true
+            }
+        },
+        "settings":
+        {
+            "run":true,
+            "retries":true,
+            "attempts":3,
+            "flow_cont":true
+        } 
     }
 
 }
