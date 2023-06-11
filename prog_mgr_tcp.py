@@ -91,28 +91,22 @@ class ProgramControl:
                 self.gpioctrl = GPIO_CONTROL(self.log_mgr)
                 # Launch the i2c test group:
                 self.i2ctests = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.config_file)
+                # Update the expected SN,PN and Rev  in the i2ccom object
+                self.i2ctests.define_uut_sn([self.sn, self.partnum, self.rev])
                 self.results_processor = ResultsManager(self.limits_file, self.log_mgr)
                 # create dynamically the new limits from the expected SN
-                self.results_processor.Add_SN_ToLimits(self.sn, self.partnum, self.rev)
-                self.test_started = True
-                return True
+                self.results_processor.include_sn_limits(self.sn, self.partnum, self.rev)
+                # Run UUT detection
+                self.test_started = self.gpioctrl.detect_uut_tcp()
+                return "TEST_START_CORRECT"
             else:
-                return False
+                return "TEST_RUNNING"
         except KeyError:
             print("ERROR:\tInvalid Settings")
-            return False
+            return "INVALID_SETTINGS"
         except:
-            return False
+            return "RUNTIME_ERROR_NOTCORRECT"
 
-    def detect_uut(self, timeout:int) -> bool:
-        counter = 0
-        while (counter < (timeout*4)):
-            # Takes 0.25s to
-            results = self.gpioctrl.detect_uut_tcp()
-            if (results):
-                return results
-            counter = counter+1
-        return False
 
     def run_test(self, details:str) -> str:
         try:
@@ -121,10 +115,19 @@ class ProgramControl:
             # Get settings from the TCP client
             test_name = test_details['testname']
             log_test = bool(test_details['log_test'])
+            interactive = test_details['interactive']
             test_fnc_ref = getattr(self.i2ctests, test_name)
-            results = test_fnc_ref()
+            if (interactive):
+                # Test is flagged as interactive (will contain the results)
+                try:
+                    results = test_details['userinput']
+                except:
+                    # If no results were passed, then do not log this 
+                    log_test = False
+            else:
+                # Test is not interactive, run it
+                results = test_fnc_ref()
             if (log_test):
-                # Analyzes all the results and converts into a formatted array to be logged to a file
                 [seq_result, log_lines] = self.results_processor.ProcessResults(test_name, results)
                 # Log the results from this sequence into the results file
                 self.log_mgr.log_sequence_results(log_lines)

@@ -89,26 +89,20 @@ class tcp_launcher:
 
     
     def process_test_cmd(self, inbound_cmd:str) -> str:
-        # Cmd contains Start Test:
+        # Command to start a test:
         if (inbound_cmd.__contains__('START_TEST') and not self.test_ctrl.test_started):
             print("Start Test")
-            if (self.test_ctrl.start_test(inbound_cmd)):
-                if (self.test_ctrl.detect_uut(20)):
-                    return 'TEST_START_CORRECT'
-                else:
-                    return 'UNDETECTED_UUT'
-            else:
-                return 'TEST_START_ERROR'
+            return self.test_ctrl.start_test(inbound_cmd)
+        # Command from client request to run test
         elif (inbound_cmd.__contains__('RUN_TEST') and self.test_ctrl.test_started):
             print("Run Test")
             res_str = self.test_ctrl.run_test(inbound_cmd)
             return res_str
+        # Command from client request to terminate the test
         elif (inbound_cmd.__contains__('END_TEST')):
             return self.test_ctrl.end_test()
         else:
             return "INVALID_CMD"
-
-
     
     # Launch TCP server in a child thread
     def launch_tcp_thread(self):

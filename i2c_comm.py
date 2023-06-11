@@ -29,6 +29,7 @@ class ELB_i2c:
     serial = ""
     part_number = ""
     rev = ""
+    sn_defined = False
     #function declaration
 
     def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL, log_handler:LOG_Manager, config_file:str = None) -> None:
