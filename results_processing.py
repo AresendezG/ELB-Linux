@@ -106,6 +106,12 @@ class ResultsManager:
            pn2_hex = pn2_hex[0:32]
         return pn2_hex
 
+    def process_remote_inputs(self, userinput) -> list:
+        print(userinput)
+        results_list = []
+        for item in userinput:
+            results_list.append([item['test_name'], item['result']])
+        return results_list
 
     def include_sn_limits(self, uut_serial:str, uut_pn:str, uut_rev:str) -> dict:
         # copy to local dict to manipulate data

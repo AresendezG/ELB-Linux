@@ -97,7 +97,7 @@ class ProgramControl:
                 # create dynamically the new limits from the expected SN
                 self.results_processor.include_sn_limits(self.sn, self.partnum, self.rev)
                 # Run UUT detection
-                self.test_started = self.gpioctrl.detect_uut_tcp()
+                self.test_started = self.gpioctrl.detect_uut_tcp(60)
                 return "TEST_START_CORRECT"
             else:
                 return "TEST_RUNNING"
@@ -120,7 +120,8 @@ class ProgramControl:
             if (interactive):
                 # Test is flagged as interactive (will contain the results)
                 try:
-                    results = test_details['userinput']
+                    results_json = test_details['details']
+                    results = self.results_processor.process_remote_inputs(results_json)
                 except:
                     # If no results were passed, then do not log this 
                     log_test = False
