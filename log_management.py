@@ -19,42 +19,29 @@ class MessageType:
 
 class LOG_Manager():
     
-    def __init__(self, uut_serial: str, def_path: str) -> None:
-        
+    def __init__(self, def_path: str) -> None:
         # Var definitions
-        self.default_path = def_path
+        self.logs_path = def_path
         self.logfile = None     # Handler of the plaintxt logfile
         self.resultsfile = None # Handler of the results logfile
         self.logfilename = ""
         self.ext_logfile = ".txt"
         self.ext_results = ".csv"
-        self.serial = uut_serial        
-        self.logfiletime = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-        # Validate serial number
-        if (not isinstance(uut_serial, str) or len(uut_serial) < 1):
-            raise TypeError("ERROR: Expected a Serial Number as Parameter")        
-        dir_status = self.__validate_def_path()
-        files_status = self.__OpenLogFiles()
-        
-        if (dir_status and files_status):
-            self.__init_logfile()
-            pass
-        else:
-            raise FileExistsError
+        self.files_closed = True
+        pass        
         
     
     def __del__(self):
-        print("Mesaage:\tClosing Logfiles")
-        self.logfile.close()
-        self.resultsfile.close()
+        print("Message:\tClosing Active Logfiles")
+
         pass
 
     # Validate default paths
     def __validate_def_path(self) -> bool:
-        if not os.path.exists(self.default_path):
+        if not os.path.exists(self.logs_path):
         # Try to create the default dir if it does not exist
             try:
-                os.makedirs(self.default_path)
+                os.makedirs(self.logs_path)
                 return True
         # for whatever reason, OS has rejected the creation of the default dir    
             except:
@@ -62,51 +49,70 @@ class LOG_Manager():
         else:
             return True 
 
-    def __OpenLogFiles(self) -> bool:
-        # Update the results logfile
-        self.logfilename = "ELB_"+self.serial+"_"+self.logfiletime+self.ext_logfile
-        self.resultsfilename = "ELB_"+self.serial+"_"+self.logfiletime+self.ext_results
+    def __create_logfile_handlers(self) -> bool:
+        log_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.logs_path = self.logs_path + "/"+self.serial+"/"+ log_time
+        if (self.__validate_def_path()):
+            # Update the results logfile
+            self.logfilename =     "/ELB_"+log_time+"_"+self.serial+self.ext_logfile
+            self.resultsfilename = "/ELB_"+log_time+"_"+self.serial+self.ext_results
 
-        # check if file exists
-        filecnt = 0
-        while os.path.isfile(self.default_path+self.logfilename):
-            filecnt = filecnt + 1
-            # print warning
-            print("Warning: File already exist: {}\n".format(self.default_path+self.logfilename))
-            # create unique file name
-            self.logfilename = "ELB_"+self.serial+"_"+self.logfiletime+"_"+str(filecnt)+self.ext_logfile
-            self.resultsfilename = "ELB_"+self.serial+"_"+self.logfiletime+"_"+str(filecnt)+self.ext_results
-        
-        # create files
-        try: 
-            self.logfile = open(self.default_path+self.logfilename, "w")
-            self.resultsfile = open(self.default_path+self.resultsfilename, "w")
-            print("Event: Opened {}\n".format(self.default_path+self.logfilename))
-            print("Event: Opened {}\n".format(self.default_path+self.resultsfilename))
-            return True
-        except:
-            print("ERROR: Unable to open Logfiles!")
+            # check if file exists
+            filecnt = 0
+            while os.path.isfile(self.logs_path+self.logfilename):
+                filecnt = filecnt + 1
+                # print warning
+                print("Warning: File already exist: {}\n".format(self.logs_path+self.logfilename))
+                # create unique file name
+                self.logfilename =     "/ELB_"+self.serial+"_"+log_time+"_"+str(filecnt)+self.ext_logfile
+                self.resultsfilename = "/ELB_"+self.serial+"_"+log_time+"_"+str(filecnt)+self.ext_results
+            # create files
+            try: 
+                self.logfile = open(self.logs_path+self.logfilename, "w")
+                self.resultsfile = open(self.logs_path+self.resultsfilename, "w")
+                print("Event: Opened {}\n".format(self.logs_path+self.logfilename))
+                print("Event: Opened {}\n".format(self.logs_path+self.resultsfilename))
+                return True
+            except:
+                print("ERROR: Unable to open Logfiles!")
+                return False
+        else:
             return False
 
-    def __init_logfile(self):
-        self.logtofile("Juniper Electric Loopback Test Log\n")
-        self.logtofile("=====================\n")
-        self.logtofile("Test Date: {}\n".format(self.logfiletime))
-        self.logtofile("UUT SN: "+self.serial)
+    def __print_logfile_header(self) -> bool:
+        log_time = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+        self.log_to_file("Juniper Electric Loopback Test Log\n")
+        self.log_to_file("=====================\n")
+        self.log_to_file(f"Test Date: {log_time}\n")
+        self.log_to_file(f"UUT SN: {self.serial}")
         self.resultsfile.write("Juniper Electric Loopback TestResults\n")
-        self.resultsfile.write("Test Date,{}\n".format(self.logfiletime))
-        self.resultsfile.write("UUT SN,{}\n".format(self.serial))
+        self.resultsfile.write(f"Test Date,{log_time}\n")
+        self.resultsfile.write(f"UUT SN,{self.serial}\n")
         self.resultsfile.write("Index,Result,Test Name,High Limit,Measurement,Low Limit\n")
+        self.files_closed = False
+        return True
 
 
-    def logtofile(self, line: str):
+    def create_log_files(self, serial:str) -> bool:
+        self.serial = serial
+        # Validate serial number
+        if (len(serial) < 1):
+            raise TypeError("ERROR: Expected a Serial Number as Parameter")        
+        files_status = self.__create_logfile_handlers()
+        if (files_status):
+            self.start_time = datetime.datetime.now()
+            return self.__print_logfile_header()
+        else:
+            raise FileExistsError("ERROR: Unable to Create the LogFiles")
+
+
+    def log_to_file(self, line: str):
         print(line) # Use same fnc to display info to screen
         self.logfile.write(line + "\n") # Append new Line
         return
 
 
-    def log_sequence_results(self, loglines:list):
-        
+    def log_sequence_results(self, loglines:list):        
         for item in range(len(loglines)):
             if (loglines[item][0] == "NUM"):
                 self.log_numeric_tofile(loglines[item][1:])
@@ -221,6 +227,7 @@ class LOG_Manager():
         str_to_print = (f"{MessageType.USER}USER INPUT:\t{flash}\t{off}\t{green}\t{red}")
         # print to console
         print(str_to_print)
+        pass
 
 
     # print PASS on Green and FAILs on Red
@@ -234,4 +241,16 @@ class LOG_Manager():
         return (f"{mesg_type}{status}{MessageType.ENDC}")
 
 
+    def close_logs(self):
+        if(self.files_closed):
+            return
+        else:
+            try:
+                self.logfile.close()
+                self.resultsfile.close()
+                os.chmod(self.logs_path+self.logfilename,0o777)
+                os.chmod(self.logs_path+self.resultsfilename,0o777)
+                self.files_closed = True
+            except:
+                return
 

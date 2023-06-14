@@ -24,7 +24,8 @@
         {
             "run":false,
             "retries":true,
-            "attempts":3
+            "attempts":3, 
+            "interactive":false
         }
     },
 
@@ -61,7 +62,8 @@
             "run":true,
             "retries":true,
             "attempts":2,
-            "flow_cont":false
+            "flow_cont":false, 
+            "interactive":false
         }
     },
 
@@ -70,21 +72,21 @@
         "step_list":
         {
 
-            "serial":
+            "prog_serial":
             {
                 "test_name": "PROGRAMMED_SERIAL",
                 "expected_data": "EXPECTEDSERIAL",
                 "report":true,
                 "numeric":false
             },
-            "partnum":
+            "prog_partnum":
             {
                 "test_name": "PROGRAMMED_PN",
                 "expected_data": "EXPECTEDPN",
                 "report":true,
                 "numeric":false
             },
-            "rev":
+            "prog_rev":
             {
                 "test_name": "PROGRAMMED_REV",
                 "expected_data": "EXPECTEDREV",
@@ -98,7 +100,8 @@
             "run":true,
             "retries":true,
             "attempts":2,
-            "flow_cont":false
+            "flow_cont":false, 
+            "interactive":false
         }
     },
 
@@ -144,7 +147,8 @@
             "run":true,
             "retries":true,
             "attempts":2,
-            "flow_cont":false
+            "flow_cont":false, 
+            "interactive":false
         }
     },
 
@@ -186,7 +190,8 @@
             "run":true,
             "retries":true,
             "attempts":2,
-            "flow_cont":false
+            "flow_cont":false, 
+            "interactive":false
         }
     },
 
@@ -225,10 +230,51 @@
         },
         "settings":
         {
-            "run":true,
+            "run":false,
             "retries":true,
             "attempts":2,
             "flow_cont":true
+        }
+    },
+
+    "led_remote":
+    {
+        "step_list":{
+            "led_green_on":
+            {
+                "test_name": "LED GREEN ON",
+                "expected_data": "PASS",
+                "report":true,
+                "numeric":false
+            },
+            "led_flash_on":
+            {
+                "test_name": "LED FLASH MODE",
+                "expected_data": "PASS",
+                "report":true,
+                "numeric":false
+            },
+            "led_red_on":
+            {
+                "test_name": "LED RED ON",
+                "expected_data": "PASS",
+                "report":true,
+                "numeric":false
+            },
+            "led_off":
+            {
+                "test_name": "LED OFF",
+                "expected_data": "PASS",
+                "report":true,
+                "numeric":false
+            }
+        },
+        "settings":{
+            "run":true,
+            "retries":true,
+            "attempts":2,
+            "flow_cont":true, 
+            "interactive":true
         }
     },
 
@@ -278,7 +324,8 @@
             "run":true,
             "retries":true,
             "attempts":2,
-            "flow_cont":true
+            "flow_cont":true, 
+            "interactive":false
         }
     },
 
@@ -310,7 +357,8 @@
             "run":true,
             "retries":true,
             "attempts":3,
-            "flow_cont":true
+            "flow_cont":true, 
+            "interactive":false
         }
 
     },
@@ -433,7 +481,8 @@
             "run":true,
             "retries":true,
             "attempts":3,
-            "flow_cont":true
+            "flow_cont":true, 
+            "interactive":false
         }
     },
 
@@ -449,6 +498,15 @@
                 "unit": "nA",
                 "report":true,
                 "numeric":true
+            },
+            "prbs_run":
+            {
+                "test_name": "PRBS RUNNING",
+                "low_limit": 0,
+                "high_limit": 0,
+                "unit": "nA",
+                "report":false,
+                "numeric":true
             }
         },
         "settings":
@@ -456,7 +514,8 @@
             "run":true,
             "retries":true,
             "attempts":3,
-            "flow_cont":true
+            "flow_cont":true, 
+            "interactive":false
         }
     },
 
@@ -560,7 +619,8 @@
             "run":true,
             "retries":true,
             "attempts":3,
-            "flow_cont":true
+            "flow_cont":true, 
+            "interactive":false
         }
     },
 
@@ -601,7 +661,8 @@
             "run":true,
             "retries":true,
             "attempts":3,
-            "flow_cont":true
+            "flow_cont":true, 
+            "interactive":false
         }
 
     },
@@ -760,7 +821,8 @@
             "run":true,
             "retries":true,
             "attempts":3,
-            "flow_cont":true
+            "flow_cont":true, 
+            "interactive":false
         }
 
     },
@@ -829,7 +891,8 @@
             "run":true,
             "retries":true,
             "attempts":3,
-            "flow_cont":true
+            "flow_cont":true, 
+            "interactive":false
         } 
     }
 

@@ -1,6 +1,6 @@
 import os
 import json
-from log_management import LOG_Manager
+from log_management import LOG_Manager, MessageType
 from i2c_types import LedMode
 
 
@@ -52,7 +52,7 @@ class ResultsManager:
         # get the list of results for this group of tests from the JSON limits file
         try:
             # Find if this group of tests has a defined group of limits
-            seq_limits_list = self.all_limits[seqname]
+            seq_limits_list = self.all_limits[seqname]["step_list"]
             for item in range (len(results)):
                 try:
                     # Get individual test limits based on the test name
@@ -106,6 +106,42 @@ class ResultsManager:
            pn2_hex = pn2_hex[0:32]
         return pn2_hex
 
+    def process_remote_inputs(self, userinput) -> list:
+        print(userinput)
+        results_list = []
+        for item in userinput:
+            results_list.append([item['test_name'], item['result']])
+        return results_list
+
+    def include_sn_limits(self, uut_serial:str, uut_pn:str, uut_rev:str) -> dict:
+        # copy to local dict to manipulate data
+        updated_all_limits = self.all_limits
+        # Create same strings as those programmed into the UUT
+        uut_serial_formatted = ResultsManager.trim_str(uut_serial, 16) # call is as static fnc
+        uut_pn_formatted = ResultsManager.trim_str(uut_pn, 16)
+        uut_rev_formatted = ResultsManager.trim_str(uut_rev, 2)
+        uut_pn2_hex = ResultsManager.create_pn2(uut_pn_formatted, uut_rev)
+        uut_pn2_str = "".join(chr(x) for x in uut_pn2_hex)
+        # Update the keys in the ALL LIMITS read from the json file 
+        try:
+            # keys for the programming uut-sn sequence
+            updated_all_limits['prog_uut_sn']['step_list']['prog_serial']['expected_data'] = uut_serial
+            updated_all_limits['prog_uut_sn']['step_list']['prog_partnum']['expected_data'] = uut_pn
+            updated_all_limits['prog_uut_sn']['step_list']['prog_rev']['expected_data'] = uut_rev
+            # keys for the read sn sequence 
+            updated_all_limits['uut_serial_num']['step_list']['serial']['expected_data'] = uut_serial_formatted
+            updated_all_limits['uut_serial_num']['step_list']['part_num']['expected_data'] = uut_pn_formatted
+            updated_all_limits['uut_serial_num']['step_list']['rev']['expected_data'] = uut_rev_formatted
+            updated_all_limits['uut_serial_num']['step_list']['pn2_str']['expected_data'] = uut_pn2_str
+            # Update all_limits in this object for future results processing
+            self.all_limits = updated_all_limits
+            self.log_mgr.print_message("Updated SN/PN/REV Limits",MessageType.EVENT, True)
+            # return all_limits to caller for the flow control
+            return updated_all_limits
+        except KeyError:
+            self.log_mgr.print_message("Incorrect or Missing Parameters in the Sequence File",MessageType.FAIL)
+            raise KeyError
+
     def Add_SN_ToLimits(self, uut_serial:str, uut_pn:str, uut_rev:str) -> dict:
             
         # Create same strings as those programmed into the UUT
@@ -115,7 +151,10 @@ class ResultsManager:
         uut_pn2_hex = ResultsManager.create_pn2(uut_pn, uut_rev)
         uut_pn2_str = "".join(chr(x) for x in uut_pn2_hex)
         # Create a dict with the dynamic parameters
-        serialnum_dict:dict = {'uut_serial_num':{
+        serialnum_dict:dict = {
+            'uut_serial_num':{
+                    "step_list":
+                    {
                         "serial":
                         {
                         "test_name": "SERIAL_NUMBER_READBACK",
@@ -145,7 +184,14 @@ class ResultsManager:
                           "numeric":False
                         }           
                       }
-                      }
+                    },
+                    "settings":
+                    {
+                        "run":True,
+                        "retries":True,
+                        "attempts":3
+                    }
+                    }
         # Append the newly created dict to the all limits dict
         self.all_limits.update(serialnum_dict)
         return self.all_limits

@@ -1,56 +1,40 @@
+import argparse
 from log_management import MessageType
 
-class ArgumentsProcess:
+class UserArguments:
 
-    # define default names for the config files
-    def_settings_file = "settings.json"
-    def_limits_file = "limits.json"
-    def_seq_file = "seqconfig.xml"
+    # Default names for the config files
+    def_settings_file = "configs/settings.json"
+    def_limits_file = "configs/limits.json"
+    def_seq_file = "configs/seqconfig.xml"
+    def_tcp = None
 
     def __init__(self) -> None:
-        
         pass
 
-    def find_index(self, param:str, arg:list) -> list:
+    def __get_user_args(self) -> list:
+        parser = argparse.ArgumentParser(description="Juniper Active ELB TestCommand")
+        parser.add_argument('-s', '--settings', type=str, required=False,
+            help="(Optional) /path/tp/settings.json Settings file")
+        parser.add_argument('-l', '--limits', type=str, required=False,
+            help="(Optional) /path/to/limits.json Custom Test Limits File")
+        parser.add_argument('-x', '--sequence', type=str, required=False,
+            help="(Optional) /path/to/sequence.xml Custom Sequence File to change the execution order")
+        parser.add_argument('-t', '--tcpport', type=str, required=False,
+            help="(Optional) [portnum] Execute the program listening over the specified TCP port")
+        parser.add_argument('-u', '--uuthost', type=str, required=False,
+            help="(Optional) [host] Define the IP or Hostname to bind the TCP Socket to")
 
-        for i in range(len(arg)):
-            try:
-                index = arg.index(param)
-            except:
-                index = -1
-                pass
-        return index
+        args = parser.parse_args()
 
-    def validate_ext(self, index_set:int, argv:list, expected_ext:str, default_file:str) -> str:
-        if (index_set >= 0):
-            if (argv[index_set + 1].__contains__(expected_ext)):
-                file_str = argv[index_set + 1]
-            else:
-                file_str = default_file
-        else:
-            print(f"No arg found. Using {default_file} as default")
-            file_str = default_file
-        return file_str
+        settings = args.settings
+        limits = args.limits
+        sequence = args.sequence
+        tcpport = args.tcpport
+        tcp_host = args.uuthost
 
-    def validate_uut(self, index:int, argv:list) -> list:
-        if (index >= 0):
-            try:
-                uut_sn = argv[index + 1]
-                uut_pn = argv[index + 2]
-                uut_rv = argv[index + 3]
-                return [uut_sn, uut_pn, uut_rv]
-            except:
-                print("Wrong Settings on the UUT Information. Try Again.")
-                raise IndexError
-        else:
-            print("Warning:\t No UUT info, User needs to Scan UUT")
-            [uut_sn, uut_pn, uut_rv, valid_sn] = self.scan_uut()
-            if (valid_sn):
-                return [uut_sn, uut_pn, uut_rv]
-            else:
-                print("ERROR:\t User Cancelled execution")
-                raise IndexError
-        pass
+        return [settings, limits, sequence, tcpport, tcp_host]
+
 
     # receives an input string, and returns the second element after the split
     def __split_return_after(self, input_str:str, splitchar:str) -> str:
@@ -64,7 +48,23 @@ class ArgumentsProcess:
         return -1
     
 
-    def scan_uut(self) -> list:
+    def __validate_ext(self, param_file:str, default_file:str, expected_file_ext:str) -> str:
+        if (param_file != None):
+            if (param_file.__contains__(expected_file_ext)):
+                return param_file
+            else:
+                print(f"Warning: User passed invalid Param File. Executing default {default_file}")
+                return default_file
+        else:
+            return default_file
+
+
+    def __validate_tcp_port(self, tcp_port:str) -> bool:
+        tcp_num = int(tcp_port)
+        return (tcp_num > 1000 and tcp_num < 64000)
+            
+
+    def __scan_uut(self) -> list:
         user_input = "NONE"        
         # allow user multiple faiures
         while (user_input != 'c'):
@@ -79,43 +79,38 @@ class ArgumentsProcess:
                     sn_str = self.__split_return_after(elements_input[self.__find_str(elements_input,'SN:')], ':')
                     pn_str = self.__split_return_after(elements_input[self.__find_str(elements_input,'PN:')], ':')
                     return [sn_str, pn_str, rev_str, True]
+                
+                except KeyboardInterrupt:
+                    print("User has cancelled the execution")
+                    return [None, None, None, False]
                 except:
                     print("ERROR. Scan Again the Label or type [c] + Enter key to exit")
         # User cancelled the execution, return an empty list
         return [None, None, None, False]
 
 
-    def parse_args(self, argv:list) -> list:
+
+    def parse_args(self) -> list:
         
         # Find for settings arg
-        index_set = self.find_index('-x', argv)
-        index_lim = self.find_index('-l', argv)
-        index_seq = self.find_index('-s', argv)
-        index_uut = self.find_index('-u', argv)
-
-        # process index parameter
-        settings_file = self.validate_ext(index_set, argv, ".json", self.def_settings_file)
-        limits_file = self.validate_ext(index_lim, argv, ".json", self.def_limits_file)
-        seq_file = self.validate_ext(index_seq, argv, ".xml", self.def_seq_file)
-
-        [uut_sn, uut_pn, uut_rv] = self.validate_uut(index_uut, argv)
-
-        print(f"Using Settings File: {settings_file}")
-        print(f"Using Limits File: {limits_file}")
-        print(f"Using UUT SN: {uut_sn}")
+        [settings, limits, sequence, tcp_port, tcp_host] = self.__get_user_args()
+        # Validate settings file:
+        settings_file = self.__validate_ext(settings, self.def_settings_file, ".json")
+        # Validate sequence file
+        seq_file = self.__validate_ext(sequence, self.def_seq_file, ".xml")
+        limits_file = self.__validate_ext(limits, self.def_limits_file, ".json")
         
-        # Expected list from the program_manager 
-        
-        '''
-            # Define all of the input parameters
-            self.sn = self.input_args[1]
-            self.rev = self.input_args[2]
-            self.partnum = self.input_args[3]
-            self.seq_file = self.input_args[4]
-            self.limits_file = self.input_args[5]
-            self.config_file = self.input_args[6]
-        
-        '''
-        return [uut_sn, uut_rv, uut_pn, seq_file, limits_file, settings_file]
-
-        
+        # Request user to scan UUT if the program is running in console mode
+        if (tcp_port == None):
+            [sn_str, pn_str, rev_str, execution] = self.__scan_uut()
+            if (execution):
+                return [sn_str, rev_str, pn_str, seq_file, limits_file, settings_file]
+            else:
+                return None
+        # Execution is TCP/IP mode, UUT info coming from the TCP service
+        else:
+            if (self.__validate_tcp_port(tcp_port)):
+                return ["TCPMODE", int(tcp_port), tcp_host]
+            else:
+                print ("Invalid TCP Port, not executing!")
+                raise IndexError

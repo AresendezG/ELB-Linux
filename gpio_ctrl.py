@@ -8,6 +8,7 @@ from log_management import LOG_Manager, MessageType
 class GPIO_CONTROL:
 
     spinner = itertools.cycle(['-', '/', '|', '\\'])
+    userled_cycle = itertools.cycle([GPIO.LOW, GPIO.HIGH])
     # Handler of the Logger Object
     log_mgr = None
     
@@ -23,6 +24,8 @@ class GPIO_CONTROL:
         GPIO.setup(GPIO_PINS.LPMODE, GPIO.OUT)
         GPIO.setup(GPIO_PINS.MODSEL, GPIO.OUT)
         GPIO.setup(GPIO_PINS.RESET_L, GPIO.OUT)
+        # Define USER LED as Output for the RPI
+        GPIO.setup(GPIO_PINS.LED_FIX, GPIO.OUT)
         # pass control of the logger object to local object
         self.log_mgr = log_handler
 
@@ -60,6 +63,7 @@ class GPIO_CONTROL:
         # GPIO.output(GPIO_PINS.LPMODE, GPIO.LOW)
         GPIO.output(GPIO_PINS.MODSEL, GPIO.LOW)
         GPIO.output(GPIO_PINS.RESET_L, GPIO.HIGH)
+        GPIO.output(GPIO_PINS.LED_FIX, GPIO.LOW)
 
 
     def reset_uut(self, wait_time: int):
@@ -87,6 +91,28 @@ class GPIO_CONTROL:
         else:
             return True
         
+    # To be queried while the program is running in TCP mode
+    def detect_uut_tcp(self, timeout:int) -> bool:
+        timeout_ctr = timeout * 4
+        counter:int = 0
+        # INT_L is pull to GND when ELB is inserted into the fixture
+        detected = self.read_gpio(GPIO_PINS.INT_L)
+        if detected == 0:
+            return True
+        while (detected != 0 and counter < timeout_ctr):
+            self.write_gpio(GPIO_PINS.LED_FIX, next(self.userled_cycle))
+            detected = self.read_gpio(GPIO_PINS.INT_L)
+            counter = counter + 1
+            time.sleep(0.25)
+        if (counter >= timeout_ctr):
+            self.log_mgr.print_message("FAIL: ELB Not Detected before Timeout Expired", MessageType.FAIL)
+            self.write_gpio(GPIO_PINS.LED_FIX, GPIO.LOW)
+            return False
+        else:
+            self.write_gpio(GPIO_PINS.LED_FIX, GPIO.HIGH)
+            return True
+
+
     def wait_effect(timeout:int, printmsg:bool = True):
         spinner = itertools.cycle(['-', '/', '|', '\\'])
         counter = 0

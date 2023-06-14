@@ -8,6 +8,7 @@ import time
 from log_management import LOG_Manager
 # from firmware import ELBFirmware
 from results_processing import ResultsManager
+from arguments import UserArguments
 
 class DummyClass:
     def __init__(self) -> None:
@@ -101,21 +102,60 @@ class i2c_PicoInterface:
 
 
 def __main__():
-    print("Launch Logfile Manager")
-    log_mgr = LOG_Manager("DUMMYSERIAL", "C:\\BalerionELB\\logs\\debuglogs\\")
-    results_mgr = ResultsManager("limits.json", log_mgr)
-    all_lims:dict = results_mgr.all_limits
-    print("Event:\tOriginal Dict")
-    print(all_lims)
-    print("Event:\tUpdating Dict")
-    serial = "SERIALNUMBER"
-    partnumber = "PARTNUMBER" 
-    rev = "09"
-    results_mgr.Add_SN_ToLimits(serial, partnumber, rev)    
-    print("Event:\t Update Dict")
-    print(all_lims)
+    
+    '''
+        test_name = test['test_name']
+        retries = int(test['retries'])
+        flow_ctrl = test['flow']
+    '''
+    sn = "ZP00203003"
+    pn = "750-219993"
+    rv = "09"
 
-#__main__()
+    LogMgrObject = LOG_Manager("test_results/")
+    LogMgrObject.create_log_files(sn)
+    SeqObject = SeqConfig()
+    ResObject = ResultsManager("configs/limits.json", LogMgrObject)
+    seq_xml = SeqObject.ReadSeq_Settings_XML('configs/seqconfig.xml')
+    print("Launch Logfile Manager")    
+    # read the limits template
+    flow_json = SeqObject.ReadSeq_Settings_JSON('configs/limits.json')
+    print("This is flow_json")
+    print(flow_json)
+    # These are template limits (created during object constructor):
+    template_limits = ResObject.all_limits
+    print("These are template limits")
+    for item in template_limits:
+        print(item)
+        try:
+            print(template_limits[item]['step_list']['serial']['expected_data'])
+            print(template_limits[item]['step_list']['rev']['expected_data'])
+            print(template_limits[item]['step_list']['part_num']['expected_data'])
+        except:
+            pass
+    # update the flow object with the SN
+    ResObject.include_sn_limits(sn, pn, rv)
+    new_limits = ResObject.all_limits
+    print("These are updated Limits")
+    for item in new_limits:
+        print(item)
+        try:
+            print(new_limits[item]['step_list']['serial']['expected_data'])
+            print(new_limits[item]['step_list']['rev']['expected_data'])
+            print(new_limits[item]['step_list']['part_num']['expected_data'])
+        except:
+            pass
+    print("Flow ctrl remains the same:")
+    print(flow_json)
+    # Accessing ind elements
+    for test in flow_json: 
+        test_name = test['test_name']
+        retries = int(test['retries'])
+        flow_ctrl = test['flow']
+        print(f"Items in {test_name} are: Retries={retries}, flow_ctrl={flow_ctrl}")
+    
+
+__main__()
 
           
         

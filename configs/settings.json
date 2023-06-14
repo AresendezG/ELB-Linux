@@ -1,8 +1,8 @@
 {
-    "expected_fw": "0.71",
-    "fw_file": "/tmp/elb/fw/Balerion_FWRelease71_ID.hex",
+    "expected_fw": "0.75",
+    "fw_file": "/tmp/elb/fw/Balerion_FWRelease75_ID.hex",
     "i2c_default_add": 80, 
-    "log_path": "/tmp/elb/logs/",
+    "log_path": "/tmp/elb/logs",
     "modrate": "PAM4_50G",
     "seq_sync_time": 3
 }

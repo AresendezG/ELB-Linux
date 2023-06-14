@@ -14,6 +14,15 @@
    "justMyCode":true
     },
     {    
+      "name":"TCP_Mode",
+       "type":"python",
+    "request":"launch",
+    "program":"${file}",
+       "args":["-t","13085","-u","10.232.16.62"],
+    "console":"integratedTerminal",
+ "justMyCode":true
+  },
+    {    
         "name":"Debug No Args",
          "type":"python",
       "request":"launch",
@@ -26,7 +35,7 @@
          "type":"python",
       "request":"launch",
       "program":"${file}",
-         "args":["-s","seqconfig.xml","-l","limits.json","-x","settings.json"],
+         "args":["-s","configs/seqconfig.xml","-l","configs/limits.json","-x","configs/settings.json"],
       "console":"integratedTerminal",
    "justMyCode":true
     },
