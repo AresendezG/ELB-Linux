@@ -406,7 +406,7 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # flash LEDs
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, current_led_status[0])
-        return ["LED", current_led_status[1]]
+        return [["LED", current_led_status[1]],[None, None]]
 
 
     def volt_sensors(self) -> list:

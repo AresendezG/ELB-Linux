@@ -134,6 +134,8 @@ class ProgramControl:
                 [self.seq_result, log_lines] = self.results_processor.ProcessResults(test_name, results)
                 # Log the results from this sequence into the results file
                 self.log_mgr.log_sequence_results(log_lines)
+                # Include the group result in the return JSON
+                results.append(["group_result",self.seq_result])
             # Returns the raw results to the TCP Client
             ret_json = json.dumps(results)
             return ret_json
@@ -154,7 +156,4 @@ class ProgramControl:
         del self.i2ctests
         self.test_started = False
         # seq_result should be true if none of the sequences failed the test
-        if (self.seq_result):
-            return "PASS"
-        else:
-            return "FAIL"
+        return str(self.seq_result)
