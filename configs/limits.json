@@ -70,21 +70,21 @@
         "step_list":
         {
 
-            "serial":
+            "prog_serial":
             {
                 "test_name": "PROGRAMMED_SERIAL",
                 "expected_data": "EXPECTEDSERIAL",
                 "report":true,
                 "numeric":false
             },
-            "partnum":
+            "prog_partnum":
             {
                 "test_name": "PROGRAMMED_PN",
                 "expected_data": "EXPECTEDPN",
                 "report":true,
                 "numeric":false
             },
-            "rev":
+            "prog_rev":
             {
                 "test_name": "PROGRAMMED_REV",
                 "expected_data": "EXPECTEDREV",
