@@ -107,10 +107,13 @@ class ResultsManager:
         return pn2_hex
 
     def process_remote_inputs(self, userinput) -> list:
-        print(userinput)
+        #print(userinput)
         results_list = []
         for item in userinput:
-            results_list.append([item['test_name'], item['result']])
+            if (item['result']):
+                results_list.append([item['test_name'], "PASS"])
+            else:
+                results_list.append([item['test_name'], "FAIL"])
         return results_list
 
     def include_sn_limits(self, uut_serial:str, uut_pn:str, uut_rev:str) -> dict:

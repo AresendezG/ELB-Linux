@@ -275,7 +275,7 @@ class ELB_i2c:
         # Convert from string to list of hex bytes
         part_number_hex = [ord(x) for x in part_number]
         self.bus.write_i2c_block_data(self.DEV_ADD, 148, part_number_hex) 
-
+        
         # Format REV to 2 bytes only        
         rev = FormatSN.trim_str(rev, 2)
         # convert rev str into list of bytes
@@ -283,13 +283,13 @@ class ELB_i2c:
         self.bus.write_i2c_block_data(self.DEV_ADD, 164, rev_hex)
         # Format PartNumber 2 (includes rev) and return a list of bytes
         pn2_hex = FormatSN.create_pn2(part_number, rev)
-        print(pn2_hex)
+        #print(pn2_hex)
         self.bus.write_i2c_block_data(self.DEV_ADD, 224, pn2_hex) 
         # save sn, write password
         self.bus.write_i2c_block_data(self.DEV_ADD, 122, [0, 0, 0, 16])
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         time.sleep(1)
-        print("Event: \tReset UUT for 2 seconds")
+        print("Event:\tReset UUT for 2 seconds")
         self.gpioctrl.reset_uut(2)
         # Let UUT some recovery time
         print("Waiting 5 Seconds for recovery")
