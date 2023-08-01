@@ -32,10 +32,14 @@ class ELB_i2c:
     led_status = itertools.cycle([[LedMode.GREEN_ON, "LED GREEN ON"], [LedMode.RED_FLASH, "LED FLASH MODE"], [LedMode.RED_ON, "LED RED ON"], [LedMode.LED_OFF, "LED OFF"]])
 
     # UUT Variables
-    serial = ""
+    # Expected SN, PN and RV based on User Input
+    serial = "" 
     part_number = ""
     rev = ""
     sn_defined = False
+
+    # SN in UUT's memory (used for FW Upgrade)
+    uut_read_sn = ""
     #function declaration
 
     def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL, log_handler:LOG_Manager, config_file:str = None) -> None:
@@ -253,6 +257,8 @@ class ELB_i2c:
         pn2 = [x for x in retdata] # array that holds the rev number
         pn2_str = "".join(chr(x) for x in pn2)
         print("Part_Number2 : "+pn2_str)
+        # This assignation is used only for firmware-upgrade only scripts (reads from UUT without modifying it)
+        self.uut_read_sn = serial_str
         return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["pn2_str", pn2_str]]
     
     

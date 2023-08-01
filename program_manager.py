@@ -132,11 +132,9 @@ class ProgramControl:
         if uut_detection:
             self.log_mgr.log_to_file("UUT Detected. Running FW Upgrade")
             # Firmware Upgrade and SN Programming will execute first
-            #self.__FirmwareUpgrade()
             # Firmware Upgrade completed or Not required, launch i2c Communication
             self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.settings_file)
             self.i2c_comm.define_uut_sn([self.sn, self.partnum, self.rev])
-            #self.__Program_UUT_SN()   
             # For each test in the TestFlow 
             for test in self.test_flow:
                 # Read the testname from the xml config
@@ -160,6 +158,7 @@ class ProgramControl:
             self.i2c_comm.uut_cleanup()
             self.gpioctrl.config_pins_todefault()
             self.log_mgr.close_logs()
+            self.sn = self.i2c_comm.uut_read_sn # Assignment used only in FW Upgrade scripts (reads the SN without modification)
             return seqresult
         else:
             self.log_mgr.print_message("User did not inserted the ELB. No test were executed", MessageType.WARNING, True)

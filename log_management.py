@@ -111,7 +111,6 @@ class LOG_Manager():
         self.logfile.write(line + "\n") # Append new Line
         return
 
-
     def log_sequence_results(self, loglines:list):        
         for item in range(len(loglines)):
             if (loglines[item][0] == "NUM"):
@@ -254,3 +253,51 @@ class LOG_Manager():
             except:
                 return
 
+    ''' 
+    This part of the class implements a file storage method for the "Firmware Upgrade" mode
+    which is a special mode to only run the firmware-upgrade and firmware verification
+    
+    '''
+    # Create a log file to track the list of UUTs with the firmware upgraded 
+    def create_fwupgrade_log(self) -> bool:
+        log_time = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.logs_path = self.logs_path + "/fwupgrade/"
+        if (self.__validate_def_path()):
+            # Update the results logfile
+            self.fwup_logfilename =     "/FWUpgrade_"+log_time+self.ext_logfile
+            try: 
+                self.fwup_file = open(self.logs_path+self.fwup_logfilename, "w")
+                print("Event: Opened {}\n".format(self.logs_path+self.fwup_logfilename))
+                return True
+            except:
+                print("ERROR: Unable to open Logfiles!")
+            return False
+        else:
+            return False
+
+    # Log data in the firmware upgrade list
+    def __log_fwupgrade_file(self, line:str):
+        print(line)
+        self.fwup_file.write(line+"\n")
+        return
+    
+    def print_fwupgrade_headers(self, fw_version:str):
+        log_time = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+        self.__log_fwupgrade_file("Firmware Upgrade Session")
+        self.__log_fwupgrade_file(f"Date: {log_time}")
+        self.__log_fwupgrade_file(f"New Firmware: {fw_version}")
+        return
+    # Log the UUT SN into the firmware upgrade list
+    def log_new_uut_fwupgrade(self, uutsn:str):
+        log_time = datetime.datetime.now().strftime("%Y/%m/%d %H:%M:%S")
+        self.__log_fwupgrade_file(f"UUT SN: {uutsn}")
+        self.__log_fwupgrade_file(f"Completion Time: {log_time}")
+        return
+    # close the file for the firmware upgrade list
+    def close_uut_fwupgrade_file(self):
+        try:
+            self.fwup_file.close()
+            os.chmod(self.logs_path+self.fwup_logfilename,0o777)
+        except:
+            return
+        return
