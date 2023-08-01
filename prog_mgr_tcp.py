@@ -41,8 +41,8 @@ class ProgramControl:
         self.sn = self.input_args['serial']
         self.rev = self.input_args['rev']
         self.partnum = self.input_args['partnum']
-        self.config_file = self.input_args['config']
-        self.limits_file = self.input_args['limits']
+        #self.config_file = self.input_args['config']
+        #self.limits_file = self.input_args['limits']
 
         # Validate SN, Rev, Partnum
         self.__validate_param(self.sn, "Serial", 5)
@@ -50,7 +50,7 @@ class ProgramControl:
         self.__validate_param(self.partnum, "Part Number", 5)
 
         # Read the settings from the Json file
-        self.__Read_Settings()
+        #self.__Read_Settings()
         return
     
     def __validate_param(self, param:str, para_name:str, min_len:int) -> bool:
@@ -80,8 +80,25 @@ class ProgramControl:
             print("ERROR:\tWrong Configuration settings")
             raise FileExistsError
     
+    # Client send the configuration settings
+    def config_test(self, client_config_json:str) -> str:
+        config_json_str = client_config_json.strip('\n') #clean termination char
+        self.configs = json.loads(config_json_str)
+        # Define Mod rate for PRBS
+        self.prbs_modrate = getattr(MOD_Rates, self.configs['modrate'])
+        # Define i2c address of the UUT
+        self.i2c_address = self.configs['i2c_default_add']
+        self.log_path = self.configs['log_path']
+        self.time_between_seq = self.configs['seq_sync_time']
+        return "CONFIG_SETTINGS_OK"
 
-    def start_test(self, in_settings:str) -> bool:
+    def config_limits(self, limits_config:str) -> str:
+        limits_config_str = limits_config.split('\n')
+        limits_dict = json.loads(limits_config_str)
+        self.results_processor = ResultsManager(self.log_mgr, limits_file=None, limits=limits_dict)
+        return "CONFIG_LIMITS_OK"
+
+    def start_test(self, in_settings:str) -> str:
         try:
             if (not self.test_started):
                 cmd_settings = in_settings.strip('\n')
@@ -91,11 +108,10 @@ class ProgramControl:
                 self.__StartLog(self.sn)
                 # Launch the GPIO controller
                 self.gpioctrl = GPIO_CONTROL(self.log_mgr)
-                # Launch the i2c test group:
-                self.i2ctests = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.config_file)
+                # Launch the i2c tests Object:
+                self.i2ctests = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.configs)
                 # Update the expected SN,PN and Rev  in the i2ccom object
                 self.i2ctests.define_uut_sn([self.sn, self.partnum, self.rev])
-                self.results_processor = ResultsManager(self.limits_file, self.log_mgr)
                 # create dynamically the new limits from the expected SN
                 self.results_processor.include_sn_limits(self.sn, self.partnum, self.rev)
                 # Run UUT detection

@@ -34,8 +34,8 @@ class ProgramControl:
         self.__StartLog()
         # Read flow config needs to happen first to create the flow template
         self.__Read_FlowConfig()
-        # Launch the results processing object with a reference to the log_mgr object
-        self.results_mgr = ResultsManager(self.limits_file, self.log_mgr)
+        # Launch the results processing object with a reference to the log_mgr object and the path for limits file
+        self.results_mgr = ResultsManager(log_handler=self.log_mgr, limits_file=self.limits_file)
         # Include the Serial number as new test limits to the result-manager object
         self.results_mgr.include_sn_limits(uut_serial=self.sn, uut_pn=self.partnum, uut_rev=self.rev)
         # Launch the GPIO controller
@@ -77,18 +77,18 @@ class ProgramControl:
     def __Read_Settings(self):
         if (os.path.isfile(self.settings_file)):
             with open(self.settings_file, 'r') as f:
-                settings = json.load(f)
+                self.settings = json.load(f)
             # Define Mod rate for PRBS
-            self.prbs_modrate = getattr(MOD_Rates, settings['modrate'])
+            self.prbs_modrate = getattr(MOD_Rates, self.settings['modrate'])
             # Define i2c address of the UUT
-            self.i2c_address = settings['i2c_default_add']
+            self.i2c_address = self.settings['i2c_default_add']
         else:
             print("ERROR:\tConfiguration File does not exist")
             raise FileNotFoundError
         try: 
             # Read settings from the config file
-            self.log_path = settings['log_path']
-            self.time_between_seq = settings['seq_sync_time']
+            self.log_path = self.settings['log_path']
+            self.time_between_seq = self.settings['seq_sync_time']
 
         except:
             print("ERROR:\tWrong Configuration settings")
@@ -133,7 +133,7 @@ class ProgramControl:
             self.log_mgr.log_to_file("UUT Detected. Running FW Upgrade")
             # Firmware Upgrade and SN Programming will execute first
             # Firmware Upgrade completed or Not required, launch i2c Communication
-            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.settings_file)
+            self.i2c_comm = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.settings)
             self.i2c_comm.define_uut_sn([self.sn, self.partnum, self.rev])
             # For each test in the TestFlow 
             for test in self.test_flow:

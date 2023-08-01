@@ -11,16 +11,25 @@ class ResultsManager:
     # Create a dict to hold all the test limits
     all_limits:dict
     # Init the limits contained in the Limits file
-    def __init__(self, limits_file:str, log_handler:LOG_Manager) -> None:
-        # Validate and load all the results file
+    def __init__(self, log_handler:LOG_Manager, limits_file:str = None, limits:dict= None):
+        # Load the test script (limits file) from a local file in the SBC
         if (os.path.isfile(limits_file)):
             with open(limits_file, 'r') as f:
                 self.all_limits = json.load(f)
+                self.log_mgr = log_handler
+                return
         else:
-            print("ERROR:\tTest Limits File does not exist")
-            raise FileNotFoundError
-        # This object should've been initialized by the Program manager
-        self.log_mgr = log_handler
+            if (limits_file != None): # The limits file was not found
+                print(f"ERROR:\tThe test Limits File {limits_file} does not exist or is not available.")
+                raise FileNotFoundError
+        # Test script was loaded from a client, passing as dict
+        if (limits != None):
+            # Limits dict defined by test client
+            self.all_limits = limits
+            self.log_mgr = log_handler
+        else:
+            print("ERROR:\tNo test limits were defined")
+            raise Exception
         pass
     
     

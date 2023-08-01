@@ -42,7 +42,7 @@ class ELB_i2c:
     uut_read_sn = ""
     #function declaration
 
-    def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL, log_handler:LOG_Manager, config_file:str = None) -> None:
+    def __init__(self, prbs_modrate: MOD_Rates, i2c_add: int, gpio_ctrl_handler:GPIO_CONTROL, log_handler:LOG_Manager, configs:dict = None) -> None:
         self.log_mgr = log_handler
         self.log_mgr.print_message("Initialize SMBus", MessageType.EVENT)
         self.bus = SMBus(self.DEVICE_BUS)
@@ -54,8 +54,8 @@ class ELB_i2c:
         self.prbs_modrate = prbs_modrate 
         # Define i2c address from the program manager 
         self.DEV_ADD = i2c_add
-        if (config_file != None):
-            self.config_file = config_file
+        # Configurations dict read from the configs file or passed by the client
+        self.configs = configs
         pass
     
     # Cleanup
@@ -205,7 +205,7 @@ class ELB_i2c:
     def run_firmware_upgrade(self) -> list:
         self.log_mgr.print_message("Running UUT Firmware Verification", MessageType.EVENT, True)
         self.bus.close()
-        fwhandler = ELBFirmware(self.config_file, self.gpioctrl, self.log_mgr)
+        fwhandler = ELBFirmware(self.configs, self.gpioctrl, self.log_mgr)
         # Verify the firmware version and try to upgrade it
         [fw_ver, retimer] = fwhandler.fw_verification()
         self.log_mgr.log_to_file("FW Version Before Upgrade: {}".format(fwhandler.old_fw))
