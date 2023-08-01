@@ -83,20 +83,28 @@ class ProgramControl:
     # Client send the configuration settings
     def config_test(self, client_config_json:str) -> str:
         config_json_str = client_config_json.strip('\n') #clean termination char
-        self.configs = json.loads(config_json_str)
-        # Define Mod rate for PRBS
-        self.prbs_modrate = getattr(MOD_Rates, self.configs['modrate'])
-        # Define i2c address of the UUT
-        self.i2c_address = self.configs['i2c_default_add']
-        self.log_path = self.configs['log_path']
-        self.time_between_seq = self.configs['seq_sync_time']
-        return "CONFIG_SETTINGS_OK"
+        cmd_dict = json.loads(config_json_str)
+        try:
+            self.configs = cmd_dict['configs_json']
+            # Define Mod rate for PRBS
+            self.prbs_modrate = getattr(MOD_Rates, self.configs['modrate'])
+            # Define i2c address of the UUT
+            self.i2c_address = self.configs['i2c_default_add']
+            self.log_path = self.configs['log_path']
+            self.time_between_seq = self.configs['seq_sync_time']
+            return "CONFIG_SETTINGS_OK"
+        except:
+            return "WRONG_CONFIG"
 
     def config_limits(self, limits_config:str) -> str:
         limits_config_str = limits_config.split('\n')
-        limits_dict = json.loads(limits_config_str)
-        self.results_processor = ResultsManager(self.log_mgr, limits_file=None, limits=limits_dict)
-        return "CONFIG_LIMITS_OK"
+        cmd_dict = json.loads(limits_config_str)
+        try:
+            limits_dict = cmd_dict['limits_json']
+            self.results_processor = ResultsManager(self.log_mgr, limits_file=None, limits=limits_dict)
+            return "CONFIG_LIMITS_OK"
+        except:
+            return "WRONG_LIMITS"
 
     def start_test(self, in_settings:str) -> str:
         try:
