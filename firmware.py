@@ -103,7 +103,7 @@ class ELBFirmware:
         openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset halt" -c "program Balerion_FWRelease69_ID.hex verify reset exit"
         '''
         # Define the OpenOCD command to run
-        cmd = 'openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset halt" -c "program {} reset exit"'.format(self.fw_file)
+        cmd = 'openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset" -c "program {} reset exit"'.format(self.fw_file)
         print("Event:\tTrying to program UUT with the following commands:")
         print(cmd)
         # Run the OpenOCD command and capture the output

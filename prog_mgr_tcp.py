@@ -37,12 +37,12 @@ class ProgramControl:
             raise RuntimeError    
 
     def __ValidateArgs(self):
-        # Define all of the input parameters
+        # Input parameters coming from the test client
         self.sn = self.input_args['serial']
         self.rev = self.input_args['rev']
         self.partnum = self.input_args['partnum']
-        #self.config_file = self.input_args['config']
-        #self.limits_file = self.input_args['limits']
+        self.configs = self.input_args['config'] # JSON Object with configuration values
+        self.limits_filename = self.input_args['limits'] # File path of the "limits file"
 
         # Validate SN, Rev, Partnum
         self.__validate_param(self.sn, "Serial", 5)
@@ -50,7 +50,7 @@ class ProgramControl:
         self.__validate_param(self.partnum, "Part Number", 5)
 
         # Read the settings from the Json file
-        #self.__Read_Settings()
+        self.__Read_Settings()
         return
     
     def __validate_param(self, param:str, para_name:str, min_len:int) -> bool:
@@ -60,51 +60,23 @@ class ProgramControl:
             print(f"Invalid Lenght of Parameter {para_name}")
             raise KeyError
 
-    # Reading the test settings from the settings.json file
+    # Reading the test settings from the configs JSON object sent by Client
     def __Read_Settings(self):
-        if (os.path.isfile(self.config_file)):
-            with open(self.config_file, 'r') as f:
-                settings = json.load(f)
-            # Define Mod rate for PRBS
-            self.prbs_modrate = getattr(MOD_Rates, settings['modrate'])
-            # Define i2c address of the UUT
-            self.i2c_address = settings['i2c_default_add']
-        else:
-            print("ERROR:\tConfiguration File does not exist")
-            raise FileNotFoundError
         try: 
-            # Read settings from the config file
-            self.log_path = settings['log_path']
-            self.time_between_seq = settings['seq_sync_time']
-        except:
-            print("ERROR:\tWrong Configuration settings")
-            raise FileExistsError
-    
-    # Client send the configuration settings
-    def config_test(self, client_config_json:str) -> str:
-        config_json_str = client_config_json.strip('\n') #clean termination char
-        cmd_dict = json.loads(config_json_str)
-        try:
-            self.configs = cmd_dict['configs_json']
             # Define Mod rate for PRBS
             self.prbs_modrate = getattr(MOD_Rates, self.configs['modrate'])
             # Define i2c address of the UUT
             self.i2c_address = self.configs['i2c_default_add']
+            # Read settings from the config file
             self.log_path = self.configs['log_path']
+            # Wait time between executing sequences 
             self.time_between_seq = self.configs['seq_sync_time']
-            return "CONFIG_SETTINGS_OK"
+            # Get the script file path
+            self.limits_filepath = self.configs['scripts_path'] + self.limits_filename
         except:
-            return "WRONG_CONFIG"
-
-    def config_limits(self, limits_config:str) -> str:
-        limits_config_str = limits_config.split('\n')
-        cmd_dict = json.loads(limits_config_str)
-        try:
-            limits_dict = cmd_dict['limits_json']
-            self.results_processor = ResultsManager(self.log_mgr, limits_file=None, limits=limits_dict)
-            return "CONFIG_LIMITS_OK"
-        except:
-            return "WRONG_LIMITS"
+            print("ERROR:\tWrong Configuration settings")
+            raise FileExistsError
+        
 
     def start_test(self, in_settings:str) -> str:
         try:
@@ -114,13 +86,15 @@ class ProgramControl:
                 self.__ValidateArgs()
                 # Creates the Logmanager Object to log the results
                 self.__StartLog(self.sn)
+                # Launch the result processing object, requires the Limits File path sent by the Client
+                self.results_processor = ResultsManager(self.log_mgr, limits_file=self.limits_filepath)
                 # Launch the GPIO controller
                 self.gpioctrl = GPIO_CONTROL(self.log_mgr)
                 # Launch the i2c tests Object:
                 self.i2ctests = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.configs)
                 # Update the expected SN,PN and Rev  in the i2ccom object
                 self.i2ctests.define_uut_sn([self.sn, self.partnum, self.rev])
-                # create dynamically the new limits from the expected SN
+                # Dynamically create new limits to include the expected SN
                 self.results_processor.include_sn_limits(self.sn, self.partnum, self.rev)
                 # Run UUT detection
                 self.test_started = self.gpioctrl.detect_uut_tcp(60)
@@ -131,7 +105,7 @@ class ProgramControl:
             print("ERROR:\tInvalid Settings")
             return "INVALID_SETTINGS"
         except:
-            return "RUNTIME_ERROR_NOTCORRECT"
+            return "RUNTIME_ERROR_NOT_CORRECT"
 
 
     def run_test(self, details:str) -> str:
