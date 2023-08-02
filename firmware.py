@@ -21,17 +21,10 @@ class ELBFirmware:
     i2cbus = None
     log_mgr = None
 
-    def __init__(self, settings_file:str, gpio_ctrl_handler:GPIO_CONTROL, log_handler: LOG_Manager) -> None:
+    def __init__(self, settings:dict, gpio_ctrl_handler:GPIO_CONTROL, log_handler: LOG_Manager) -> None:
         
         # Pass log handler to local control
         self.log_mgr = log_handler
-        # Already validated, just double verification...
-        if (os.path.isfile(settings_file)):
-            with open(settings_file, 'r') as f:
-                settings = json.load(f)
-        else:
-            self.log_mgr.print_message("ERROR:\tConfiguration File does not exist", MessageType.FAIL, True)
-            raise FileNotFoundError
         try: 
             # Read settings from the config file
             self.expected_fw = settings['expected_fw']
