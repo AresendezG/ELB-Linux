@@ -91,8 +91,16 @@ class tcp_launcher:
 
     
     def process_test_cmd(self, inbound_cmd:str) -> str:
+        # Configure the limits
+        if (inbound_cmd.__contains__('CONFIG_SETTINGS') and not self.test_ctrl.test_started):
+            print("Client configure the Settings")
+            return self.test_ctrl.config_test(inbound_cmd)
+        # Configure the limits
+        if (inbound_cmd.__contains__('CONFIG_LIMITS') and not self.test_ctrl.test_started):
+            print("Client Configuring Test Limits")
+            return self.test_ctrl.config_limits(inbound_cmd)
         # Command to start a test:
-        if (inbound_cmd.__contains__('START_TEST') and not self.test_ctrl.test_started):
+        elif (inbound_cmd.__contains__('START_TEST') and not self.test_ctrl.test_started):
             print("Start Test")
             return self.test_ctrl.start_test(inbound_cmd)
         # Command from client request to run test
