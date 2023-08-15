@@ -5,7 +5,7 @@ import sys
 import queue
 import threading
 from threading import Thread
-from prog_mgr_tcp import ProgramControl
+from prog_mgr_remoteconsole import ProgramControl
 import time
 
 
