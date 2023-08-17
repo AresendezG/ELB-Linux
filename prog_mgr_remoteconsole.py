@@ -42,7 +42,7 @@ class ProgramControl:
         self.rev = self.input_args['rev']
         self.partnum = self.input_args['partnum']
         self.configs = self.input_args['config'] # JSON Object with configuration values
-        self.limits_filename = self.input_args['limits'] # File path of the "limits file"
+        # self.limits_filename = self.input_args['limits'] # File path of the "limits file"
 
         # Validate SN, Rev, Partnum
         self.__validate_param(self.sn, "Serial", 5)
@@ -72,7 +72,7 @@ class ProgramControl:
             # Wait time between executing sequences 
             self.time_between_seq = self.configs['seq_sync_time']
             # Get the script file path
-            self.limits_filepath = self.configs['scripts_path'] + self.limits_filename
+            # self.limits_filepath = self.configs['scripts_path'] + self.limits_filename
         except:
             print("ERROR:\tWrong Configuration settings")
             raise FileExistsError
@@ -81,24 +81,25 @@ class ProgramControl:
     def start_test(self, in_settings:str) -> str:
         try:
             if (not self.test_started):
+                self.test_started = False
                 cmd_settings = in_settings.strip('\n')
                 self.input_args = json.loads(cmd_settings)
                 self.__ValidateArgs()
-                # Creates the Logmanager Object to log the results
+                # Creates the Logmanager Object to log stuff locally
                 self.__StartLog(self.sn)
-                # Launch the result processing object, requires the Limits File path sent by the Client
-                #    self.results_processor = ResultsManager(self.log_mgr, limits_file=self.limits_filepath)
                 # Launch the GPIO controller
                 self.gpioctrl = GPIO_CONTROL(self.log_mgr)
                 # Launch the i2c tests Object:
                 self.i2ctests = ELB_i2c(self.prbs_modrate, self.i2c_address, self.gpioctrl, self.log_mgr, self.configs)
                 # Update the expected SN,PN and Rev  in the i2ccom object
                 self.i2ctests.define_uut_sn([self.sn, self.partnum, self.rev])
-                # Dynamically create new limits to include the expected SN
-                # self.results_processor.include_sn_limits(self.sn, self.partnum, self.rev)
                 # Run UUT detection
-                self.test_started = self.gpioctrl.detect_uut_tcp(60)
-                return "TEST_START_CORRECT"
+                if(self.gpioctrl.detect_uut_tcp(180)):
+                    self.test_started = True
+                    return "TEST_START_CORRECT"
+                else:
+                    self.test_started = False
+                    return "UNDETECTED_UUT"
             else:
                 return "TEST_RUNNING"
         except KeyError:
@@ -122,11 +123,13 @@ class ProgramControl:
             ret_json = json.dumps(results)
             return ret_json
         except KeyError:
-            return "ERROR-TEST-INVALID"
+            self.log_mgr.log_to_file(f"KeyError Exception Triggered. Wrong cmd syntax")
+            return "ERROR-COMMAND_SINTAX"
         except TypeError:
-            return "ERROR-NOT-VALID-TEST"
+            return "ERROR-NOT_VALID_TEST"
         except:
-            return "ERROR-UNKNOWN"
+            self.log_mgr.log_to_file(f"Runtime Error: Triggered Exception during {test_name}")
+            return "ERROR-RUNTIME_ERROR"
 
     def end_test(self) -> str:
         # Cleanup 

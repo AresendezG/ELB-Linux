@@ -26,9 +26,9 @@ class ELBFirmware:
         # Pass log handler to local control
         self.log_mgr = log_handler
         try: 
-            # Read settings from the config file
+            # Settings coming from the TCP Client or the locals settins.json file
             self.expected_fw = settings['expected_fw']
-            self.fw_file = settings['fw_file']
+            self.fw_file = settings['fw_file_path'] + settings['fw_file']
             self.i2c_address = settings['i2c_default_add']
             # Verify that FW File specified in settings file works
             if (not os.path.isfile(self.fw_file)):
@@ -56,8 +56,14 @@ class ELBFirmware:
         return retdata
 
     def __del__(self):
-        self.i2cbus.close()
-        print("Event:\tClosing i2c Bus")
+        try:
+            self.i2cbus.close()
+            print("Event:\tClosing i2c Bus")
+        except AttributeError:
+            pass
+        except:
+            print("Error during i2c Bus shutdown, FirmwareLoader Module")
+
 
     def __get_current_fw(self) -> list:
         self.i2cbus = SMBus(self.rpi_i2cbus)
