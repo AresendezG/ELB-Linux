@@ -23,8 +23,11 @@ else:
         tcp_srv.run_tcp(None,  {'port':arguments[1], 'host':arguments[2]})
     except KeyboardInterrupt:
         print("Finishing Execution due to detected interrupt")
-    except:
-        print("Error Ocurred")
+    except Exception as e:
+        print("Exception Ocurred, details: ")
+        print(e.args)
+        
+
 
 
 
