@@ -1,6 +1,7 @@
 {
     "expected_fw": "0.86",
-    "fw_file": "/tmp/elb/fw/ELB_FWRelease86_ID.hex",
+    "fw_file": "ELB_FWRelease86_ID.hex",
+    "fw_file_path":"/tmp/elb/fw/",
     "i2c_default_add": 80, 
     "log_path": "/tmp/elb/logs",
     "modrate": "PAM4_50G",
