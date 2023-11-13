@@ -44,7 +44,7 @@
             "fw_after":
             {
                 "test_name": "FIRMWARE_VERSION_CURRENT",
-                "expected_data": "0.86",
+                "expected_data": "0.113",
                 "report":true,
                 "numeric":false
             },
@@ -137,7 +137,7 @@
             "fwver":
             {
                 "test_name": "FIRMWARE_VERSION",
-                "expected_data": "0.86",
+                "expected_data": "0.113",
                 "report":true,
                 "numeric":false
             }
