@@ -213,7 +213,7 @@ class ELB_i2c:
         self.log_mgr.log_to_file("Retimer HostAddress: {}".format(retimer))
         self.bus.open(self.DEVICE_BUS)
         # Return old FW Version as float to allow any version to be reported 
-        return [["fw_before", float(fwhandler.old_fw)], ["fw_after", fw_ver], ["ret_host", retimer]]
+        return [["fw_before", float(fwhandler.old_fw)], ["fw_after", fw_ver], ["ret_host", retimer[0]]]
     
     def prog_uut_sn(self) -> list:
         # This function reads the OLD sn if any and Programs the new SN. 
