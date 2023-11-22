@@ -32,8 +32,8 @@ class ELBFirmware:
             self.i2c_address = settings['i2c_default_add']
             # Verify that FW File specified in settings file works
             if (not os.path.isfile(self.fw_file)):
-                self.log_mgr.print_message("ERROR:\tFirmware File does not exist", MessageType.FAIL, True)
-                self.log_mgr.print_message("Terminating Execution", MessageType.WARNING, True)
+                self.log_mgr.print_message("ERROR: Firmware File does not exist", MessageType.FAIL, True)
+                self.log_mgr.print_message("Raising a FileNotFound Exception and terminating Execution", MessageType.WARNING, True)
                 raise FileNotFoundError
         except:
             # Config settings are invalid, terminate execution
@@ -101,59 +101,72 @@ class ELBFirmware:
     def __fw_upgrade(self) -> list:
         # OpenOCD Command example (pending to change the interface)
         '''
-        # Program a RPI Pico
+        # Program cmd for the RPI Pico
         openocd -f interface/raspberrypi-swd.cfg -f target/rp2040.cfg -c "program i2c_comm.hex verify reset exit"
         # Dump Flash from the ELB
         openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset halt" -c "flash read_bank 0 Firmware_Dump_full.hex 0 0x100000" -c "reset" -c shutdown
         # Program fw on the ELB
-        openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset halt" -c "program Balerion_FWRelease69_ID.hex verify reset exit"
+        openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset halt" -c "program ELB_FWRelease113_ID.hex reset exit"
         '''
         # Define the OpenOCD command to run
-        cmd = 'openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset" -c "program {} reset exit"'.format(self.fw_file)
-        print("Event:\tTrying to program UUT with the following commands:")
-        print(cmd)
+        cmd = f'openocd -f interface/raspberrypi-swd.cfg -f target/psoc6.cfg -c init -c "reset" -c "program {self.fw_file} reset exit"'
+        self.log_mgr.log_to_file(f"Attempt to program UUT with: {self.fw_file}")
+        self.log_mgr.log_to_file(cmd)
         # Run the OpenOCD command and capture the output
         try:
             output = subprocess.check_output(cmd, shell=True)
-            # Print the output (does nothing!)
-            #print(output)
-            #prog_completed = output.find("Programming Finished")
-            #verified = output.find("Verified OK")
-            #reset = output.find("Resetting Target")
             self.log_mgr.print_message("Successfull Programming", MessageType.EVENT, True)
-            out_list = [True, True, True]
+            out_list = True
         except:
             self.log_mgr.print_message("ERROR:\t Unable to Load FW into UUT", MessageType.FAIL, True)
-            out_list = [False, False, False]
+            out_list = False
 
+        # Post programming
+        if (out_list):
+            self.log_mgr.log_to_file("Programming Complete. Waiting for post-programming")
+            # Hold the reset pin for at least 2 seconds
+            self.gpioctrl.reset_uut(2)
+            # Needs at least 10 seconds to fully upgrade
+            GPIO_CONTROL.wait_effect(10)
+            # Try to reach the uC again via i2c
+            self.i2cbus.open(self.rpi_i2cbus)
+            self.log_mgr.log_to_file("Opening i2c Bus after Upgrade")
+            GPIO_CONTROL.wait_effect(10)
+            # wait for retimer to be ready
+            self.__wait_for_retimer()            
         return out_list
 
     def fw_verification(self) -> list:
-        [fw_str, retimer] = self.__get_current_fw()
-        self.old_fw = fw_str
-        if (fw_str != self.expected_fw):
-            # FW Missmatch, trying to upgrade:
-            self.i2cbus.close()
-            # Try to upgrade the firmware via OpenOCD and SWD Protocol
-            [prog, verify, reset] = self.__fw_upgrade()
-            if (prog and verify):
-                # Hold the reset pin for at least 2 seconds
-                self.gpioctrl.reset_uut(2)
-                # Needs at least 10 seconds to fully upgrade
-                GPIO_CONTROL.wait_effect(10)
-                # Try to reach the uC again via i2c
-                self.i2cbus.open(self.rpi_i2cbus)
-                print("Opening i2c Bus after Upgrade")
-                GPIO_CONTROL.wait_effect(10)
-                # wait for retimer to be ready
-                self.__wait_for_retimer()
-                # Read new FW Version
+        try:
+            [fw_str, retimer] = self.__get_current_fw()
+            self.old_fw = fw_str
+            if (fw_str != self.expected_fw):
+                # FW Missmatch, trying to upgrade:
+                self.i2cbus.close()
+                # Try to upgrade the firmware via OpenOCD and SWD Protocol
+                prog = self.__fw_upgrade()
+                if (prog):
+                    # Read new FW Version
+                    [fw_str, retimer] = self.__get_current_fw()
+                else:
+                    self.log_mgr.print_message("FAILURE:\t Unable to verify FW Version", MessageType.FAIL, True)
+                    fw_str = "ERROR"
+                    retimer = "ERROR"
+            return [fw_str, retimer]
+        except OSError as error:
+            self.log_mgr.log_to_file("OSERROR Exception triggered, most likely unable to read FW version")
+            self.log_mgr.log_to_file(f"Exception number: {error.errno}")
+            self.log_mgr.log_to_file(f"Exception Filename: {error.filename}")
+            # Retrying to program the FW anyways
+            self.log_mgr.log_to_file("Forcing SWD Programming")
+            # Old FW unable to be read
+            self.old_fw = "0.0"
+            if (self.__fw_upgrade()):
                 [fw_str, retimer] = self.__get_current_fw()
             else:
-                self.log_mgr.print_message("FAILURE:\t Unable to verify FW Version", MessageType.FAIL, True)
                 fw_str = "ERROR"
                 retimer = "ERROR"
-        
+
         return [fw_str, retimer]
 
 

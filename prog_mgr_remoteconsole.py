@@ -94,11 +94,11 @@ class ProgramControl:
                 # Update the expected SN,PN and Rev  in the i2ccom object
                 self.i2ctests.define_uut_sn([self.sn, self.partnum, self.rev])
                 # Run UUT detection
-                if(self.gpioctrl.detect_uut_tcp(180)):
+                if(self.gpioctrl.detect_uut_tcp(30)):
                     self.test_started = True
                     return "TEST_START_CORRECT"
                 else:
-                    self.test_started = False
+                    self.test_started = True
                     return "UNDETECTED_UUT"
             else:
                 return "TEST_RUNNING"
@@ -127,7 +127,8 @@ class ProgramControl:
             return "ERROR-COMMAND_SINTAX"
         except TypeError:
             return "ERROR-NOT_VALID_TEST"
-        except:
+        except Exception as error:
+            self.log_mgr.log_to_file(f"Exception details: {error}")
             self.log_mgr.log_to_file(f"Runtime Error: Triggered Exception during {test_name}")
             return "ERROR-RUNTIME_ERROR"
 

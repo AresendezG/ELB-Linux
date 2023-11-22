@@ -127,7 +127,10 @@ class ProgramControl:
     def run_program(self) -> bool:
         # Run Detection check
         self.log_mgr.log_to_file("Event:\tRunning Detection")
-        uut_detection = self.gpioctrl.detect_uut(180)
+        uut_detection = self.gpioctrl.detect_uut(30)
+        if (uut_detection == False):
+            print("UUT not detected in 30 seconds")
+            uut_detection = (input('Continue Anyways? [Y|N]: ').upper()=='Y')
         overall_result = True
         if uut_detection:
             self.log_mgr.log_to_file("UUT Detected. Running FW Upgrade")
