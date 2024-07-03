@@ -5,7 +5,7 @@ from results_processing import ResultsManager as FormatSN
 from i2c_types import GPIO_PINS
 from gpio_ctrl import GPIO_CONTROL
 from i2c_types import LedMode, MOD_Rates, PowerLoad_Modes, ELB_GPIOs
-from i2c_types import CurrentSensors, TempSensors, VoltageSensors
+from i2c_types import CurrentSensors, TempSensors, VoltageSensors, UUTInfo
 from log_management import LOG_Manager, MessageType
 from firmware import ELBFirmware
 from smbus2 import SMBus
@@ -70,6 +70,19 @@ class ELB_i2c:
         temp = ((retdata[0]<<8) + retdata[1])/256 #calculate temp value from sensor 
         return temp
     
+
+    # Read all temps and return a list with all temp values
+
+    def __ReadTempAll(self) -> list:
+        # The Sensor list is declared in the i2c_types class
+        sens_data = list()
+        # write page 3
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
+        for sensor in TempSensors.ALL:
+            sns_val = self.__ReadTempFnc(sensor)
+            sens_data.append(sns_val)
+        return sens_data
+
     # Function to read voltages
     def __ReadVoltageFnc(self, regaddress: int) -> float:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, regaddress, 2)
@@ -103,7 +116,7 @@ class ELB_i2c:
     def __TestGPIO_ELB_Out(self, elb_pin: ELB_GPIOs, fixt_pin: GPIO_PINS) -> bool: #Returns pass/fail for both Low and High status
         # enable/disable the ELB GPIO
         self.bus.write_i2c_block_data(self.DEV_ADD, 142, elb_pin)
-        time.sleep(0.05)
+        time.sleep(0.25)
         # read RPI gpio status
         gpio_status = self.gpioctrl.read_gpio(fixt_pin)
         return gpio_status
@@ -111,7 +124,7 @@ class ELB_i2c:
     def __TestGPIO_ELB_In(self, elb_pin: ELB_GPIOs, fixt_pin: GPIO_PINS) -> bool:
         # enable/disable the RPi GPIOs
         self.gpioctrl.write_gpio(fixt_pin, elb_pin[0])
-        time.sleep(0.01)
+        time.sleep(0.25)
         # read ELB gpio status
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, ELB_GPIOs.GPIO_IN_REG, 1)
         retdata = [x for x in retdata]
@@ -170,7 +183,7 @@ class ELB_i2c:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 138, 1)
         retdata = [x for x in retdata]
         hostchklol = retdata[0]
-        print("host chk lol 0x{:2x}\n".format(hostchklol))
+        self.log_mgr.log_to_file("Host Check LOL 0x{:2x}".format(hostchklol))
         # read host chk prbs
         hostchkber = [0.0] * 8
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 192, 16)
@@ -185,11 +198,43 @@ class ELB_i2c:
                 hostchkber[ln] = ["ber_{}".format(ln), 0.0]
             else:
                 hostchkber[ln] = ["ber_{}".format(ln), man * (10 ** (s-24))]
-            print("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln][1],retdata[ln*2],retdata[(ln*2)+1],man,s))
+            self.log_mgr.log_to_file("Lane: {}\tBER: {} {} {}\tman: {}\ts: {}".format(ln,hostchkber[ln][1],retdata[ln*2],retdata[(ln*2)+1],man,s))
             lol_status[ln] = ["LOL_{}".format(ln), hostchklol & (1<<ln)]
             
         # Return a single list
         return (lol_status + hostchkber)
+
+
+    def __read_uut_info(self, infotype:UUTInfo) -> str:
+        '''
+            Function can read Serial, part number, Rev and PN2. The Infotype carries the register start and info size
+        '''
+        # write page 0
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
+        # read SN from reg166  
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, infotype[0], infotype[1])
+        info_array = [x for x in retdata] # List that holds the serial number
+        info_str = "".join(chr(x) for x in info_array)
+        return info_str
+
+
+    def __read_uut_serial_str(self) -> str:
+        # write page 0
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
+        # read SN from reg166  
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 166, 16)
+        serial_array = [x for x in retdata] # List that holds the serial number
+        serial_str = "".join(chr(x) for x in serial_array)
+        return serial_str
+
+    def __read_uut_partnumber(self) -> str:
+        # write page 0
+        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
+        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 148, 16)
+        pn_array = [x for x in retdata] #array that holds the part number
+        part_number = "".join(chr(x) for x in pn_array)
+        return part_number
+
 
     # ------ Sequences (can be called from outside the object) ---------------
 
@@ -237,32 +282,32 @@ class ELB_i2c:
             raise KeyError
 
     def uut_serial_num(self) -> list:
+        # Function to read the Serial number from UUT
         self.log_mgr.print_message("Readback of UUT SN", MessageType.EVENT, True)
-        # write page 0
-        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [0])
-        # read SN from reg166  
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 166, 16)
-        serial_array = [x for x in retdata] #array that holds the serialnumber
-        serial_str = "".join(chr(x) for x in serial_array)
+        serial_str = self.__read_uut_info(UUTInfo.SERIAL)
         # read PN from reg148
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 148, 16)
-        pn_array = [x for x in retdata] #array that holds the part number
-        part_number = "".join(chr(x) for x in pn_array)
+        time.sleep(0.1)
+        part_number = self.__read_uut_info(UUTInfo.PARTNUM)
+        time.sleep(0.1)
         # read revision from reg164
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
-        revision = [x for x in retdata] # array that holds the rev number
-        rev_str = "".join(chr(x) for x in revision)
+        #retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 164, 2)
+        #revision = [x for x in retdata] # array that holds the rev number
+        #rev_str = "".join(chr(x) for x in revision)
+        rev_str = self.__read_uut_info(UUTInfo.REV)
+        time.sleep(0.1)
         # Read PN-2 from register 224. Per Write sn algorithm, it will be only 18 bytes
-        retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 224, 18)
-        pn2 = [x for x in retdata] # array that holds the rev number
-        pn2_str = "".join(chr(x) for x in pn2)
+        #retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 224, 18)
+        #pn2 = [x for x in retdata] # array that holds the rev number
+        #pn2_str = "".join(chr(x) for x in pn2)
+        pn2_str = self.__read_uut_info(UUTInfo.PN2)
         print("Part_Number2 : "+pn2_str)
         # This assignation is used only for firmware-upgrade only scripts (reads from UUT without modifying it)
         self.uut_read_sn = serial_str
-        return [["serial",serial_str], ["part_num",part_number], ["rev",rev_str], ["pn2_str", pn2_str]]
+        return [["serial",serial_str], ["partnum",part_number], ["rev",rev_str], ["pn2_str", pn2_str]]
     
     
     def write_uut_sn(self, serial: str, part_number: str, rev: str):
+        # Function to program the SN from UUT. This fnc is legacy for the SBC test mode, TCP/IP uses prog_uut_sn
         self.log_mgr.print_message("Writing SN to ELB", MessageType.EVENT)
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
         # write password
@@ -297,10 +342,15 @@ class ELB_i2c:
         time.sleep(1)
         print("Event:\tReset UUT for 2 seconds")
         self.gpioctrl.reset_uut(2)
-        # Let UUT some recovery time
-        print("Waiting 5 Seconds for recovery")
-        time.sleep(5)
+        # Let UUT some recovery time (20 sec after fw 0.167)
+        print("Waiting 20 Seconds for recovery")
+        time.sleep(20)
         pass
+    
+    def prog_and_verify_serial(self) ->list:
+        prog_result = self.prog_uut_sn()
+        verify_result = self.uut_serial_num()
+        return prog_result + verify_result
 
     def uut_fw_version(self) -> list:
 
@@ -410,6 +460,9 @@ class ELB_i2c:
         current_led_status = next(self.led_status)
         # Enable cms
         self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
+        # Turn off LED for a moment
+        self.bus.write_i2c_block_data(self.DEV_ADD, 129, LedMode.LED_OFF)
+        time.sleep(0.05)
         # flash LEDs
         self.bus.write_i2c_block_data(self.DEV_ADD, 129, current_led_status[0])
         print(current_led_status[0])
@@ -431,21 +484,20 @@ class ELB_i2c:
         return [["vcc",vcc], ["vcc_tx",vcctx], ["vcc_rx",vccrx], ["vbatt",vbatt]]
 
     def temp_sensors(self) -> list:
+        # Funcion to test all sensors in standby mode (before Load Stress)
         self.log_mgr.print_message("Temp Sensors Reading",MessageType.EVENT, True)
-        # write page 3
-        self.bus.write_i2c_block_data(self.DEV_ADD, 127, [3])
-        uc_temp = self.__ReadTempFnc(TempSensors.UC)
-        print("Temp Sensor uC: {:.4f}".format(uc_temp))
-        rt_temp = self.__ReadTempFnc(TempSensors.RTMR)
-        print("Temp Sensor RTMR: {:.4f}".format(rt_temp))
-        pcb_rt_temp = self.__ReadTempFnc(TempSensors.PCB_RT)
-        print("Temp Sensor RTMR PCB {:.4f}".format(pcb_rt_temp))
-        pcb_pl_temp = self.__ReadTempFnc(TempSensors.PCB_PL)
-        print("Temp Sensor PowerLoad PCB {:.4f}".format(pcb_pl_temp))
-        shell_f_temp = self.__ReadTempFnc(TempSensors.SHELL_F)
-        print("Temp Shell F {:.4f}".format(shell_f_temp))       
-        shell_r_temp = self.__ReadTempFnc(TempSensors.SHELL_R)
-        print("Temp Shell F {:.4f}".format(shell_r_temp))
+
+        # Get the temp readings for all sensors
+        [uc_temp, rt_temp, pcb_rt_temp, pcb_pl_temp, shell_f_temp, shell_r_temp] = self.__ReadTempAll()
+
+        # Print values to console
+        print(f"Temperature sensor uC: {uc_temp:.4f}")
+        print(f"Temperature sensor Retimer: {rt_temp:.4f}")
+        print(f"Temperature sensor Retimer PCB: {pcb_rt_temp:.4f}")
+        print(f"Temperature sensor PL PCB: {pcb_pl_temp:.4f}")
+        print(f"Temperature sensor SHELL F: {shell_f_temp:.4f}")
+        print(f"Temperature sensor SHELL R: {shell_r_temp:.4f}")
+
         return [["uc_temp",uc_temp], ["retimer_temp",rt_temp], ["pcb_rt",pcb_rt_temp], ["pcb_pl",pcb_pl_temp], ["shell_f",shell_f_temp], ["shell_r",shell_r_temp]]  
     
     def epps_signal(self) -> list:
@@ -535,20 +587,25 @@ class ELB_i2c:
         retdata = self.bus.read_i2c_block_data(self.DEV_ADD, 138, 1)
         retdata = [x for x in retdata]
         hostchklol = retdata[0]
-        print("host check lol 0x{:2x}\n".format(hostchklol))
+        print(f"host check lol 0x{hostchklol:2x}")
         self.prbs_started = True
-        return [["host_check", int(hostchklol)], ["NDF", None]]
+        # PRBS min running time
+        self.prbs_time = self.configs['prbs_time']
+        time.sleep(self.prbs_time) 
+        return [["host_check", int(hostchklol)], ["prbs_run_time", self.prbs_time]]
 
     def prbs_results(self) -> list:
         # Can only return valid data if the PRBS has started previously
         if (self.prbs_started):
             prbs_results = self.__collect_prbs_results()
+            #self.prbs_started = False
         else:
             print("Warning: \tNo Previous PRBS Start. Starting it now")
             self.prbs_start()
-            print("Event:\tWaiting 60 seconds for PRBS Results")
-            time.sleep(60)
-            prbs_results = self.__collect_prbs_results()        
+            print(f"Event:\tWaiting {self.prbs_time} seconds for PRBS Results")
+            time.sleep(self.prbs_time)
+            prbs_results = self.__collect_prbs_results()
+            self.prbs_started = False        
         return prbs_results
 
     def power_loads(self) -> list:
@@ -564,7 +621,7 @@ class ELB_i2c:
         # read currents
         print("Event: \tReading Base Current:")
         i_vcc_base = self.__ReadCurrentSensor(174)
-        print("Base Current: {:.4f}".format(i_vcc_base))
+        print(f"Base Current: {i_vcc_base:.4f}")
         # Load settings #1
         [i_vcc_0p8, i_vcc_rx_4p0, i_vcc_tx_1p6] = self.__SetPL_ReadSensor(PowerLoad_Modes.LOADS_1)
         # Load settings #2
@@ -584,6 +641,91 @@ class ELB_i2c:
                     ["i_rx_4p0",i_vcc_rx_4p0], ["i_rx_0p8",i_vcc_rx_0p8], ["i_rx_1p6",i_vcc_rx_1p6], ["i_rx_3p2",i_vcc_rx_3p2],
                     ["i_tx_4p0",i_vcc_tx_4p0], ["i_tx_0p8",i_vcc_tx_0p8], ["i_tx_1p6",i_vcc_tx_1p6], ["i_tx_3p2",i_vcc_tx_3p2]]        
         return currents
+
+    def temp_stress(self) -> list:
+        # Turn off loads and set low power mode
+        self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x30])
+        self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
+        time.sleep(1)
+        self.log_mgr.print_message("Temperature Stress Test", MessageType.EVENT, True)
+        temp_sens_names = ["uc", "rt", "pcb_rt", "pcb_pl", "shell_f", "shell_r"]
+        curr_sens_names = ["i_vcc", "i_vccrx", "i_vcctx"]
+
+        # Turning on the loads to mid power and check temp sensor
+        self.log_mgr.log_to_file("Setting up Loads to Mid Power\n")
+        currents = self.__SetPL_ReadSensor(PowerLoad_Modes.LOADS_MID)
+        time.sleep(5)       
+        temps = self.__ReadTempAll() # Read all 6 temp sensors 
+
+        # Store the mid power sensor readings into the result list
+        curr_names_modified = [name + "_midp" for name in curr_sens_names]
+        mp_c_r = list(zip(curr_names_modified, currents))
+        temp_names_modified = [name + "_midp" for name in temp_sens_names]
+        mp_t_r = list(zip(temp_names_modified, temps))
+
+        # Debug:
+        for temp in temps:
+            self.log_mgr.log_to_file(f"Temp: {temp}\n")
+
+        # Turn on loads to MAX power and check temp sensors
+        self.log_mgr.log_to_file("Setting up Loads to High Power\n")
+        currents = self.__SetPL_ReadSensor(PowerLoad_Modes.LOADS_MAX)
+        self.log_mgr.log_to_file(f"Heating up XCVR for: {self.configs['temp_time']} seconds")
+        time.sleep(int(self.configs['temp_time']))       
+        temps = self.__ReadTempAll() # Read all 6 temp sensors
+
+        # Get the max and min temp delta for all 6 sensors
+        delta = max(temps) - min(temps)
+
+        # Store the High power sensor readings into the result list
+        curr_names_modified = [name + "_hip" for name in curr_sens_names]
+        hp_c_r = list(zip(curr_names_modified, currents))
+        temp_names_modified = [name + "_hip" for name in temp_sens_names]
+        hp_t_r = list(zip(temp_names_modified, temps))
+
+        #load_time = ["load_time", int(self.configs['temp_time'])]
+
+        # all loads off
+        self.bus.write_i2c_block_data(self.DEV_ADD, 135, PowerLoad_Modes.LOADS_OFF)
+        # Hi Power mode
+        self.bus.write_i2c_block_data(self.DEV_ADD, 26, [0x20])
+        self.log_mgr.log_to_file("Turning OFF Loads and set Hi Power\n")
+
+        # Report the Load soak-in time and the delta max-min of all sensors
+        ts = [("load_time", int(self.configs['temp_time'])), ("delta_temp", delta)]
+
+        return mp_t_r + mp_c_r + hp_t_r + hp_c_r + ts
+
+
+    def reset_state(self) -> list:
+        '''
+            Verify that the MCU goes into reset mode by checking if the i2c BUS is available
+        '''
+        self.log_mgr.log_to_file("Start of RESET STATE test")
+        # Check the I2C is working fine
+        sn = self.__read_uut_info(UUTInfo.SERIAL)
+        # Check if the UUT responds something
+        if (sn != ""): 
+            reset_disable = "PASS"
+            self.log_mgr.log_to_file(f"Read from UUT: {sn}")
+        # Enable reset
+        self.gpioctrl.write_gpio(GPIO_PINS.RESET_L, False)
+        time.sleep(1)
+        try:
+            self.__read_uut_info(UUTInfo.SERIAL) # This instruction should trigger an exception
+            reset_enable = "FAIL"
+        except Exception as e:
+            self.log_mgr.log_to_file("SMBUS Exception when trying to read UUT i2c BUS. This is expected during reset state test")
+            self.log_mgr.log_to_file(f"Exception details: {e}")
+            reset_enable = "PASS"
+        self.gpioctrl.write_gpio(GPIO_PINS.RESET_L, True)
+        time.sleep(5)
+        sn = self.__read_uut_info(UUTInfo.SERIAL)
+        if (sn != ""):
+            reset_disable_post = "PASS"
+        
+        return [["reset_disable", reset_disable], ["reset_enable", reset_enable], ["reset_post", reset_disable_post]]
+
 
     def uut_cleanup(self) -> list:
         if (not self.cleanup_run):

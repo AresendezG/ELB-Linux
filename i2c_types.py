@@ -23,13 +23,21 @@ class TempSensors:
 	PCB_RT	= 150
 	PCB_PL	= 154
 	SHELL_F	= 148
-	SHELL_R	= 152 
+	SHELL_R	= 152
+	ALL = [UC, RTMR, PCB_RT, PCB_PL, SHELL_F, SHELL_R] 
 
 # Configuration: current sensors reg addresses
 class CurrentSensors:
 	VCC		= 174
 	VCC_RX	= 176
 	VCC_TX	= 178
+
+# Configuration: reg address and byte array size of UUT info: Serial, PN, Rev, PN2
+class UUTInfo:
+	SERIAL  = [166, 16]
+	PARTNUM = [148, 16]
+	REV     = [164, 2]
+	PN2     = [224, 18] 
 
 
 # Configuration: GPIO regs
@@ -63,6 +71,8 @@ class PowerLoad_Modes:
 	LOADS_2		= 	[0x02, 0x08, 0x02]
 	LOADS_3		= 	[0x04, 0x01, 0x04]
 	LOADS_4		= 	[0x01, 0x04, 0x00]
+	LOADS_MID   =   [0x05, 0x05, 0x00]
+	LOADS_MAX   =   [0x0f, 0x0f, 0x01]
 	
 class GPIO_PINS:
     #ELB PIN        #RPI Pin

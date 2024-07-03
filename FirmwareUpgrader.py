@@ -17,7 +17,7 @@ LogMgr = LOG_Manager("/tmp/elb/logs/")
 print("") # Empty space
 loopstorun = input(f"{MessageType.OKCYAN}How many UUTs to Upgrade?: {MessageType.ENDC}")
 if (LogMgr.create_fwupgrade_log()):
-    LogMgr.print_fwupgrade_headers("0.111")
+    LogMgr.print_fwupgrade_headers("0.167")
     logs = True
 else:
     logs = False
